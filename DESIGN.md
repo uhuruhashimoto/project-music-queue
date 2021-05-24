@@ -392,4 +392,3 @@ As miners and the tracker will be running on the Thayer system, we will
 test integration of components through interactions on the Thayer 
 servers. We will conduct input validation, performance testing, and 
 integration testing on these servers. 
-
