@@ -1,12 +1,16 @@
 # CS60 Spring 2021 Final Project
-# Project Title: Blockchain [Project Title]
-## group7
-
-## Team members
+# Project Title: Blockchain-based Voting for Music Queueing
+## group7 Team members
 - Jonah Weinbaum
 - James Fleming
 - Uhuru Hashimoto
-- Thomas (Tommy?) White
+- Thomas White
 - Wendell Wu
 
-*Please add your README content.* 
+## Usage
+
+## Assumptions About Input
+
+## Project Structure and Dependencies
+
+## Error/Exit Codes and Meaning

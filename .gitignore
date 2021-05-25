@@ -1,0 +1,11 @@
+# Random OS-specific files
+
+*.DS_Store
+
+# any outputs for C
+
+*.o
+
+# python runtime cache
+
+*__pycache__

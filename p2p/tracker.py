@@ -43,7 +43,9 @@ class Tracker:
         pass 
 
 
-
+# the entry point for the tracker program
+if __name__ == "__main__":
+	pass
 
 
 

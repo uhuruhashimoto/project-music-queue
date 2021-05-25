@@ -69,4 +69,7 @@ class Client:
         # most likely would just use an existing API for this 
        #  https://pycryptodome.readthedocs.io/en/latest/src/public_key/rsa.html
         pass
-    
+
+# the entry point for the client program
+if __name__ == "__main__":
+	pass
