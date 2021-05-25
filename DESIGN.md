@@ -113,7 +113,7 @@ From the command line, the client will be run with:
 Where: 
 - `tracker_address` is the ip address of the tracker/server
 - `socket_port` is the port # of the tracker/server program
--  `mining mode` indicates whether the client is willing to mine blocks and whether or not the client is able to request specific songs
+-  `mining mode` indicates whether the client is willing to mine blocks and whether or not the client is able to request specific songs, input as a single char: T or F
 
 Per the assignment requirement, we will use the port numbers assigned
 to us for lab 4:
