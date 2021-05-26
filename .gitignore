@@ -9,3 +9,6 @@
 # python runtime cache
 
 *__pycache__
+
+# vscode files lmao
+.vscode
