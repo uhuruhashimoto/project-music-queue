@@ -111,8 +111,8 @@ class Client:
 
     # given a list of peers from the tracker, store their public key and open a TCP connection
     def connectToPeers(self, dictionary):
-        print("Connecting to peers")
-        print(dictionary)
+        
+        
         for peer in dictionary:
             # elf.clients[peername[0]] = (msg["port"], msg["publicKey"])
             # Store the peer to this peer's publicKey 
@@ -176,7 +176,7 @@ class Client:
                         # parse json into python dictionary
                         try:
                             if data[len(data)-1] == ';':
-                                print(msg)
+                                
                                 msg = json.loads(msg)
                                 shouldSend = True
                                 #buffer[socket] = None

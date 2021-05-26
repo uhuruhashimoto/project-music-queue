@@ -133,6 +133,8 @@ class Tracker:
                     pass
                 print(self.clients)
 
+        self.tracker_sock.close()
+
 
 
 if __name__ == "__main__":
