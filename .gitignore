@@ -1,0 +1,14 @@
+# Random OS-specific files
+
+*.DS_Store
+
+# any outputs for C
+
+*.o
+
+# python runtime cache
+
+*__pycache__
+
+# vscode files lmao
+.vscode
