@@ -24,24 +24,30 @@ class Client:
         # get our host name
         self.ip = gethostbyname(gethostname())
         # dictionary to hold peers, mapping their
-		# ip to their public keys and sockets
-        self.peers = {}
-        # Our incoming sockets / files to "select" for
-        self.inputs = [sys.stdin]
-        # Our outgoing sockets <-- doesn't input contain all of those already?
-        self.outputs = []
+		# 4-tuple of ips, port, public key, and socket
+		# if public key is None, then it's a tracker
+		# if public key and port is none, then it's stdin
+        # if public key is self.public_key it's listening socket
+        self.peers = []
 
-        # The port that I advertise 
+        # The port that I advertise
         self.myPort = int(sys.argv[5])
-        self.tracker_sock = None 
         self.myListeningSock = None
+		# set up our listening port
+        self.open()
 
-		# set up our ports
-        self.Open()
+		# a socket to talk to the tracker
+        self.tracker_sock = None
         
         # my public and private keys,, first parameter is number of bits , might have slightly less if accurate is set to false
         self.publicKey, self.privateKey  = rsa.newkeys(512,accurate = False)
 
+    '''
+        Removes a peer's socket from lists of peers
+
+        parameters:
+            socket - socket of the peer which is disconnected
+    '''
     def remove_Socket(self,socket):
         peername = socket.getpeername()
         self.peers.pop(peername, None)
@@ -52,46 +58,39 @@ class Client:
         except Exception as e:
             print(f"Encountered error {e}")
 
-
-    def Open(self):
+	"""
+		
+	"""
+    def open(self):
         # Create a socket and start listening on it
         self.myListeningSock = socket(AF_INET, SOCK_STREAM)
-        
         self.myListeningSock.bind((self.ip, self.myPort))
         self.myListeningSock.listen()
-        self.inputs.append(self.myListeningSock)
+
+        #Add listening socket to list of peers
+        self.peers.append((self.ip, self.myPort, self.myListeningSock, self.publicKey))
         
         print(f"Listening at {self.ip},{self.myPort}")
     
     # create a TCP connection with someone else
-    def connectTo(self, Address, Port, isTracker =False):
+    def connectTracker(self, address, port):
         newSock = socket(AF_INET, SOCK_STREAM)
-        
-        try:
-            newSock.connect((Address, Port))
+        newSock.connect((address, port))
 
-        # add this socket to our inputs and outputs as we can both read from it and write to it. 
-            if isTracker:
-                self.inputs.append(newSock)
-                self.outputs.append(newSock)
-                self.tracker_sock = newSock
-        
+        # Add tracker socket to list of peers
+        self.peers.append((address, port, newSock, None))
+    
         # Tell the tracker the information other clients need to connect to it 
-                myInfo = {"port": self.myPort, "publicKey":self.pk}
-            
-            else:
-                newSock.setblocking(0)
-                myInfo = (self.pk)
-            myInfoInJson = json.dumps(myInfo, indent = None)
-        # So we send a message with a "NEW" flag header and then the relevant information 
-            newSock.send(bytes(f"NEW:{myInfoInJson}", 'utf-8'))
-        except:
-            print(f"Error trying to connect to {Address}, {Port}")
+        myInfo = {"ip": self.ip, "port": self.myPort, "publicKey":self.publicKey}
+        
+        myInfoInJson = (json.JSONEncoder.encode(myInfo.__dict__)).encode()
 
+        newSock.send(myInfoInJson)
+			
     # given a list of peers from the tracker
 	# store their public key and open a TCP connection
-    def connectToPeers(self, dictionary):
-        for peer in dictionary:
+    def connectToPeers(self):
+        for peer in self.peers:
             # self.clients[peername[0]] = (msg["port"], msg["publicKey"])
             # Store the peer to this peer's publicKey 
             value = dictionary[peer]
@@ -108,9 +107,12 @@ class Client:
     def runClient(self):
         buffer= {}
         while True:
-            inputs, outputs, exceptional = select.select(self.inputs, self.outputs, self.inputs)
+            inputs, outputs, exceptional = select.select(self.peer, [], self.inputs)
+
+            #Socket has error (disconnected)
             for socket in exceptional: 
                 self.remove_Socket(socket)
+
             for socket in inputs:
                 # A new peer is trying to connect with us, we should accept them 
                 if (socket is self.myListeningSock):
@@ -126,7 +128,7 @@ class Client:
                     data = socket.recv(4096)
                     
 
-                    if data: 
+                    if data:
                         shouldSend = False
                             # Figure out where this message came from 
                         peername = socket.getpeername()
@@ -175,9 +177,6 @@ class Client:
                                 if (flag == "NEW"):
                                     # A fellow peer is telling us that they have connected and this is their publicKey
                                     self.peers[peername[0]] = rsa.PublicKey(msg[0], msg[1])
-          
-            for socket in outputs:
-                pass
 
         # run the actually client logic
 
