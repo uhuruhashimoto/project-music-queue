@@ -1,19 +1,17 @@
 
 """
-Client.py
+client.py
 Group 7: Project Music Queue
-CS60 Dartmouth Xia Zhou 
+CS60 Dartmouth, Prof. Xia Zhou 
 
-Jonah Weinbaum
-James Fleming
-Uhuru Hashimoto
-Thomas White
+Contributors for this file:
 Wendell Wu
-
+Uhuru Hashimoto
+James Fleming
 
 This class allows a user to create a new client. 
-Connect to the tracker and then all the peers, and then send and receive blocks use the block and blockchain API's
-
+Connect to the tracker and then all the peers,
+and then send and receive blocks use the block and blockchain API's
 """
 
 import select, sys, queue
@@ -23,48 +21,38 @@ import rsa
 
 class Client:
     def __init__(self):
-        # get our host name 
+        # get our host name
         self.ip = gethostbyname(gethostname())
-       
-    
-        # dictionary to hold peers, their public keys and port numbers 
+        # dictionary to hold peers, mapping their
+		# ip to their public keys and sockets
         self.peers = {}
-
-        # Our incoming sockets / files
+        # Our incoming sockets / files to "select" for
         self.inputs = [sys.stdin]
-        # Our outgoing sockets 
+        # Our outgoing sockets <-- doesn't input contain all of those already?
         self.outputs = []
 
         # The port that I advertise 
-        self.myPort = int(input("Port to open On"))
-        self.tracker_sock = None
+        self.myPort = int(sys.argv[5])
+        self.tracker_sock = None 
         self.myListeningSock = None
+
+		# set up our ports
         self.Open()
-        
         
         # my public and private keys,, first parameter is number of bits , might have slightly less if accurate is set to false
         self.publicKey, self.privateKey  = rsa.newkeys(512,accurate = False)
-        self.pk = (self.publicKey.n, self.publicKey.e)
 
-        
-
-
-        
     def remove_Socket(self,socket):
         peername = socket.getpeername()
         self.peers.pop(peername, None)
 
         try:
             self.inputs.remove(socket)
-        except:
-            pass
-        try:
             self.outputs.remove(socket)
-        except:
-            pass
+        except Exception as e:
+            print(f"Encountered error {e}")
 
 
-        
     def Open(self):
         # Create a socket and start listening on it
         self.myListeningSock = socket(AF_INET, SOCK_STREAM)
@@ -81,11 +69,8 @@ class Client:
         
         try:
             newSock.connect((Address, Port))
-        
 
         # add this socket to our inputs and outputs as we can both read from it and write to it. 
-            
-
             if isTracker:
                 self.inputs.append(newSock)
                 self.outputs.append(newSock)
@@ -103,18 +88,11 @@ class Client:
         except:
             print(f"Error trying to connect to {Address}, {Port}")
 
-
-
-
-        
-
-
-    # given a list of peers from the tracker, store their public key and open a TCP connection
+    # given a list of peers from the tracker
+	# store their public key and open a TCP connection
     def connectToPeers(self, dictionary):
-        
-        
         for peer in dictionary:
-            # elf.clients[peername[0]] = (msg["port"], msg["publicKey"])
+            # self.clients[peername[0]] = (msg["port"], msg["publicKey"])
             # Store the peer to this peer's publicKey 
             value = dictionary[peer]
             
@@ -126,10 +104,6 @@ class Client:
                 print(f"Connecting to {value[2]}, {int(value[0])}")
                 self.connectTo(value[2], int(value[0]))
             # Create a connection with this peer 
-
-        
-
-   
 
     def runClient(self):
         buffer= {}
@@ -188,8 +162,6 @@ class Client:
                                 else:
                                     buffer[socket] = data
 
-                            
-
                         except:
                             
                             print("Was not properlly formatted to be converted from JSON")
@@ -203,22 +175,11 @@ class Client:
                                 if (flag == "NEW"):
                                     # A fellow peer is telling us that they have connected and this is their publicKey
                                     self.peers[peername[0]] = rsa.PublicKey(msg[0], msg[1])
-                    
-                        
-
-
-
-
-                            
-                
+          
             for socket in outputs:
                 pass
-            
-               
+
         # run the actually client logic
-
-
-
 
 
     # uses Block Api to first mine, and then attempt to send a block to be included in the block chain
@@ -239,19 +200,20 @@ class Client:
     def displayBlockChain(self):
         # I'm not sure how actual implementations of block chain / bitcoin tally the entire ledger / blockchain. Im pretty sure they use clever data stuctures / or just someone keeps track of their balance from the get-go 
         # but we need some way of displaying the entire block chain data... Maybe we only need to iterate over blocks we haven't iterated over and always keep track of the last block number that we have already tallied. 
-
         pass 
-
 
     # Generate private and public key pair so that we can sign our transactions and verify them... However maybe not necessary for the scope of the assignment
     def generateKeys():
         # most likely would just use an existing API for this 
-       #  https://pycryptodome.readthedocs.io/en/latest/src/public_key/rsa.html
+        #  https://pycryptodome.readthedocs.io/en/latest/src/public_key/rsa.html
         pass
     
 if __name__ == "__main__":
     myClient = Client()
-    tracker_ip = input("Tracker IP: ")
-    tracker_port = int(input("Tracker Port: "))
+    # parse command line args
+    tracker_ip = sys.argv[1]
+    tracker_port = int(sys.argv[2])
+    mining = sys.argv[3] == "T"
+    key_file = sys.argv[4]
     myClient.connectTo(tracker_ip, tracker_port, True)
     myClient.runClient()
