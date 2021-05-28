@@ -4,12 +4,9 @@ import hashlib
 from .block import Block
 
 class Blockchain:
-    def __init__(self, padding):
+    def __init__(self):
         """
         Initialize an empty blockchain
-
-        parameters:
-            padding -- HASH_PADDING as given by tracker
         """
 
         #Set the head of the blockchain as an empty block
@@ -26,14 +23,21 @@ class Blockchain:
         block.prev_block = self.head
         self.head = block
 
-    def verify_chain(self):
+    def verify_chain(self, padding):
         """
         Verify that the blockchain is valid. To be valid, the each block must satisfy requirements
         listed in "block.py"
 
+        parameters:
+            padding -- HASH_PADDING as given by tracker
+
         returns:
             True if the entire blockchain is valid, False otherwise
         """
+
+        #TODO add padding functionality to block verification 
+        #also -> what is the "head" parameter in the Block.verify() function?
+
         ptr = self.head
 
         while ptr is not None:
@@ -72,7 +76,7 @@ def deserialize(jsonin, padding):
         Blockchain object filled with provided data
     """
 
-    out = Blockchain(padding)
+    out = Blockchain()
 
     js = json.loads(jsonin)
 
