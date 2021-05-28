@@ -35,6 +35,7 @@ class Entry:
         returns:
             True if verification is successful, False otherwise
         """
+        # TODO figure out authentication of keys
         message = f'{self.song} - {self.vote}'.encode()
 
         try:
@@ -46,17 +47,17 @@ class Entry:
         
 
     def serialize(self):
-        '''
+        """
         Serialize the entry to a JSON representation
 
         returns:
             string containing JSON
-        '''
+        """
         return json.JSONEncoder().encode(self.__dict__)
 
 
 def deserialize(jsonin):
-    '''
+    """
     Returns an Entry object given a JSON string representation of the object.
 
     parameters:
@@ -64,9 +65,9 @@ def deserialize(jsonin):
     
     returns:
         Entry object filled with provided data
-    '''
+    """
     # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
-    entry = Entry(js["song"], js["vote"], js["public_key"])
-    entry.signature = js["signature"] 
+    entry = Entry(js['song'], js['vote'], js['public_key'])
+    entry.signature = js['signature'] 
     return entry
