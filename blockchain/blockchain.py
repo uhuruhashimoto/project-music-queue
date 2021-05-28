@@ -2,6 +2,7 @@ import json
 import hashlib
 
 from .block import Block
+from .block import deserialize as deserialize_block
 
 class Blockchain:
     def __init__(self):
@@ -81,7 +82,7 @@ def deserialize(jsonin, padding):
     js = json.loads(jsonin)
 
     for block in reversed(js):
-        out.add_block(block)
+        out.add_block(deserialize_block(block))
     
     return out
     
