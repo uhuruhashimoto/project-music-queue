@@ -1,5 +1,6 @@
 import hashlib
 import json
+import rsa
 
 from .entry import deserialize as deserialize_entry
 
@@ -52,7 +53,7 @@ class Block:
         # if self.public_key <isn't one we trust>
         #    return False
 
-        message = self.entries[-1].serialize()
+        message = self.entries[-1].serialize().encode()
         try:
             rsa.verify(message, self.signature, self.public_key)
         except rsa.pkcs1.VerificationError as e:
@@ -78,6 +79,8 @@ class Block:
         """
         self_dict = self.__dict__.copy()
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+        self_dict['public_key'] = str(self_dict['public_key'].n)
+
         return json.JSONEncoder().encode(self_dict)
 
 
@@ -107,9 +110,10 @@ def deserialize(jsonin):
     js = json.loads(jsonin)
     
     entries = [deserialize_entry(entry_str) for entry_str in js['entries']]
+    public_key = rsa.PublicKey(n=int(js['public_key']), e=65537)
 
-    block = Block(entries, js['public_key'], js['hash_prev'])
+    block = Block(entries, public_key, js['hash_prev'])
     block.nonce = js['nonce']
-    block.hash_prev = js['signature']
+    block.signature = js['signature']
 
     return block
