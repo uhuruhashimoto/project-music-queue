@@ -80,6 +80,7 @@ class Block:
         self_dict = self.__dict__.copy()
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
         self_dict['public_key'] = str(self_dict['public_key'].n)
+        self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)
 
