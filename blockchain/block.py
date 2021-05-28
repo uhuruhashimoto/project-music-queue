@@ -21,6 +21,7 @@ class Block:
         self.hash_prev = hash_prev
         self.nonce = NONCE_INIT
         self.signature = None
+        self.block_prev = None
 
 
     def sign(self, private_key):
