@@ -1,6 +1,5 @@
 import rsa
 import hashlib
-import math #for faster bitmask calculation
 
 ''' Collection of APIs used by client in mining mode (miner)
  miner takes a single block and maintains a copy of the blockchain
