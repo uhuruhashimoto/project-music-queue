@@ -1,41 +1,51 @@
-import rsa
-import hashlib
+import json
+import time
+from hashlib import sha256
+
+TIMEOUT = 1000000000000000000000000000000000000000000
 
 ''' Collection of APIs used by client in mining mode (miner)
- miner takes a single block and maintains a copy of the blockchain
- mining is the process of using rsa to find a hash for the block '''
+ miner takes a block and uses its data, hash, and nonce to mine
+Currently uses hashlib for sha256 implementation'''
 
-#TODO FIX: get hash correctly (sha256 somehow?), use rightshift and AND operator for isMined (sep function), add error checking
-# what is the hash? a string? maybe cast to a string 
-# TODO: add recognition to re-start if another miner finds the hash first
-
-#inputs: new block of transactions and hash padding
-def mine(block, blockchain, hash_padding):
-	hashValue = '' #string for leading zeros
-	nonce = 0 #starts with nonce of 0
-	isMined = False
+#Inputs: block number, string of transactions, byte string prev hash, padding
+def mine(blocknum, transactions, prev_hash, hash_padding):
+	hash_val = '' #string for leading zeros
+	nonce = 0
+	is_mined = False
 	
-	#mining uses previous block's hash (from the head of the blockchain)
-	prevBlock = blockchain.getHead()
-	prevHash = prevBlock.hash_prev
+	pref = '0'*hash_padding
 	
-	while(!isMined):
+	#start time
+	t = time.time()
 	
-		#computes hash w rsa using transactions and prevHash
-		hashValue = str(hashlib.sha256())
+	while not(is_mined):
+		#concatenate data
+   		txt = str(blocknum) + str(transactions) + prev_hash + str(nonce)
 		
+  		#compute hash val
+   		hash_val = SHA256(txt)
+  		
+		elapsed = time.time() - t
+  		
+  		#check
+		if (hash_val.startswith(pref)):
+    		is_mined = True
+  		
+		if (elapsed > TIMEOUT):
+    		raise BaseException(f'Mining timeout')
+    		is_mined = True
+  		
+  		# increment nonce
+		nonce = nonce + 1
 		
-		#checks if the hashValue is longer than the hash padding
-		isMined = verify(hashValue, hash_padding)
-		
-		#increments nonce by 1 if unsuccessful
-		nonce += nonce
-		
-	#returns hash value if successful
 	return hashValue
 	
 	
-#Do something like return hashValue & (111... or shift >> hash_padding)
-def verify(hashValue, hash_padding):
-	return (int(hashValue[:hash_padding]) == 0)
+def mine(block, hash_padding):
+	mine(block.blocknum, block.entries.serialize(), block.hash_prev, hash_padding)
+	
+#returns sha256 hash of a string
+def SHA256(txt):
+	return sha256(txt.encode("ascii")).hexdigest()
 	
