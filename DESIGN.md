@@ -108,7 +108,7 @@ Similar to the user interface, we should describe how data is input into the cli
 
 From the command line, the client will be run with:
 
-`./python3 client.py [tracker_address] [tracker_port] [mining mode] [key_file] [self_port]`
+`./python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [key_file]`
 
 Where: 
 - `tracker_address` is the ip address of the tracker/server
