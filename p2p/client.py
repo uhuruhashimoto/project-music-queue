@@ -103,7 +103,7 @@ class Client:
 		self.peers.append((self.trackerIp, self.trackerPort, None, self.trackerSock))
 	
 		# Tell the tracker the information other clients need to connect to it
-		myInfo = {"ip": self.ip, "port": self.myPort, "publicKey": self.publicKey.__dict__, "flag": "new"}
+		myInfo = {"ip": self.ip, "port": self.myPort, "publicKey": (self.publicKey.n, self.publicKey.e), "flag": "new"}
 		myInfoInJson = (json.dumps(myInfo)).encode()
 		self.trackerSock.send(myInfoInJson)
 
@@ -123,10 +123,9 @@ class Client:
 			# of our choice to store peers as a list of 4-tuples, with the socket/fd
 			# being in the last slot of the tuple (index 3)
 			inputs = []
-			for peer in peers:
+			for peer in self.peers:
 				inputs.append(peer[3])
 
-			
 			inSocks, outSocks, exceptionSocks = select.select(inputs, [], inputs)
 
 			# Socket has error (disconnected) TODO: check if socket disconnect causes error or empty read. TODO: pretty sure it's an empty read/Null
@@ -144,7 +143,7 @@ class Client:
 
 				# User is sending from stdin
 				elif (socket is sys.stdin):
-					data = socket.recv(BUFF_SIZE*1000)
+					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
 				# tracker is sending data

@@ -63,6 +63,7 @@ class Tracker:
 		for client in self.clients:
 			if(client[3] == socket):
 				self.clients.remove(client)
+				print(f"Removed client {(client[0], client[1])}")
 							
 	"""
 	Handle p2p input.
@@ -75,13 +76,15 @@ class Tracker:
 		except Exception as e:
 			print(f"Encountered error {e}")
 		
-		flag = msg["flag"]
+		flag = data["flag"]
 
 		#client is sending information
 		if (flag == "new"):
 			for client in self.clients:
 				if(client[3] == socket):
-					client[2] = msg["publicKey"] #sets public key to a JSON deserialization of the public key __dict__
+					self.clients.remove(client)
+					#sets public key to a JSON deserialization of the public key __dict__
+					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
 				else:
 					self.sendClientList(client[3])
 		else:
