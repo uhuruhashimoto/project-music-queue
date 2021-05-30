@@ -116,8 +116,8 @@ class Client:
 	Returns: nothing
 	"""
 	def runClient(self):
-        keepRunning = True
-        
+		keepRunning = True
+		
 		while keepRunning:
 			# construct our list of fd's to listen to. We need to do this because
 			# of our choice to store peers as a list of 4-tuples, with the socket/fd
@@ -145,8 +145,8 @@ class Client:
 				# User is sending from stdin
 				elif (socket is sys.stdin):
 					data = socket.recv(BUFF_SIZE*1000)
-                    if (data == "EXIT"):
-                        keepRunning = False
+					if (data == "EXIT"):
+						keepRunning = False
 				# tracker is sending data
 				elif (socket is self.trackerSock):
 					pass
@@ -166,15 +166,15 @@ class Client:
 	- data is always non-None
 	"""
 	def handleP2PInput(self, data, socket): 
-        # load the data into a json object
+		# load the data into a json object
 		data = json.loads(data)
 		# see what kind of data we are receiving
-        flag = data["flag"]
+		flag = data["flag"]
 
-        if flag == "peers":
-            self.connectToPeers(data["clients"])
-        else:
-            print(f"Invalid flag!")
+		if flag == "peers":
+			self.connectToPeers(data["clients"])
+		else:
+			print(f"Invalid flag!")
 
 
 	"""
@@ -184,19 +184,19 @@ class Client:
 	
 	"""
 	def connectToPeers(self, clientList):
-        seen = False
+		seen = False
 
 		for client in clientList:
-            for peer in self.peers:
-                #client has been seen before
-                if (client[0] == peers[0])
-                    seen = True
+			for peer in self.peers:
+				#client has been seen before
+				if client[0] == peers[0]:
+					seen = True
 					break
-            if not seen:
-                newSock = socket(AF_INET, SOCK_STREAM) 
-                newSock.connect((client[0], client[1]))
-                self.peers.append(client[0], client[1], client[2], newSock)
-            
+			if not seen:
+				newSock = socket(AF_INET, SOCK_STREAM) 
+				newSock.connect((client[0], client[1]))
+				self.peers.append(client[0], client[1], client[2], newSock)
+			
 
 	'''
 		Removes a peer from list of peers. Either the peer was
