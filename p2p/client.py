@@ -20,7 +20,7 @@ import json
 from socket import *
 import rsa
 
-BUFF_SIZE = 1024 #in Kb
+BUFF_SIZE = 1024 # in Kb
 
 class Client:
 	"""
@@ -104,7 +104,7 @@ class Client:
 	
 		# Tell the tracker the information other clients need to connect to it
 		myInfo = {"ip": self.ip, "port": self.myPort, "publicKey": self.publicKey, "flag": "new"}
-		myInfoInJson = (json.JSONEncoder.encode(myInfo.__dict__)).encode()
+		myInfoInJson = (json.dumps(myInfo)).encode()
 		self.trackerSock.send(myInfoInJson)
 
 		print(f"Successfully connected to tracker {self.trackerIp}:{self.trackerPort}")

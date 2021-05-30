@@ -23,22 +23,18 @@ class Tracker:
     def __init__(self):
         self.listeningPort = 60005
 
-        # A dictionary of all clients relating them by ip address  to their ( public key , listening port number)
-        # Will sent to a new clients when a new client joins
-        self.clients = {}
-        self.inputs =[]
-        self.outputs = []
+        # A list of all clients which sent to new clients
+		# 4-tuple of ips, port, public key, and socket
+        self.ciennts[]
         
         self.ip = gethostbyname(gethostname())
         
-        
-        
-
         self.tracker_sock = None
-        # Call Open
+
+        # Open Tracker Socket
         self.Open()
-        
-    
+
+        self.clients.append((self.ip))
 
     def Open(self):
         # Create a socket and start listening on it
@@ -72,6 +68,7 @@ class Tracker:
 
     def runTracker(self):
         while True:
+            inputs = 
             inputs, outputs, exceptional = select.select(self.inputs, self.outputs, self.inputs)
             for socket in inputs:
                 # this means a client is attempting to create a new connection
