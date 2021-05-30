@@ -131,12 +131,10 @@ class Client:
                 # A new peer is trying to connect with us, we should accept them
                 if (socket is self.myListeningSock):
                     newConnection, address = socket.accept()
-                    self.inputs.append(newConnection)
-                    self.outputs.append(newConnection)
-                    print(f"Got new connection from {address}")
+                    self.peers.append((address[0], address[1], None, ))
+                    print(f"Got new connection from peer: {address}")
                 # This socket is the tracker
                 else:
-                    
                         # Okay the issue here is that we only read in a fixed size, but if the message is longer than this size everything breaks. 
                     data = socket.recv(4096)
                     
