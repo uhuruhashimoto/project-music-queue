@@ -25,7 +25,7 @@ class Tracker:
 
         # A list of all clients which sent to new clients
 		# 4-tuple of ips, port, public key, and socket
-        self.ciennts[]
+        self.cients[]
         
         self.ip = gethostbyname(gethostname())
         
@@ -68,7 +68,10 @@ class Tracker:
 
     def runTracker(self):
         while True:
-            inputs = 
+            inputs = []
+			for client in self.clients:
+				inputs.append(client[3])
+            inputs.append(self.tracker_sock)
             inputs, outputs, exceptional = select.select(self.inputs, self.outputs, self.inputs)
             for socket in inputs:
                 # this means a client is attempting to create a new connection

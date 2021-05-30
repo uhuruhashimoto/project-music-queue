@@ -103,7 +103,7 @@ class Client:
 		self.peers.append((self.trackerIp, self.trackerPort, None, self.trackerSock))
 	
 		# Tell the tracker the information other clients need to connect to it
-		myInfo = {"ip": self.ip, "port": self.myPort, "publicKey": self.publicKey, "flag": "new"}
+		myInfo = {"ip": self.ip, "port": self.myPort, "publicKey": self.publicKey.__dict__, "flag": "new"}
 		myInfoInJson = (json.dumps(myInfo)).encode()
 		self.trackerSock.send(myInfoInJson)
 
