@@ -7,9 +7,9 @@ class Entry:
         Initialize an entry
 
         parameters:
-            song -- Song Title
-            vote -- Yes/No Vote
-            public_key -- RSA Public Key
+            song -- song title
+            vote -- yes/no vote
+            public_key -- RSA public key
         """
         self.song = song
         self.vote = vote
@@ -19,48 +19,49 @@ class Entry:
     def sign(self, private_key):
         """
         Sign the entry's content with the provided private key instance (see 
-        <whatever_crypto_package_we_end_up_using>/rsa)
+        package rsa)
 
         parameters:
-            private_key -- RSA Private Key
-            
-        returns:
-            nothing
+            private_key -- RSA private key
         """
         message = (self.song + self.vote).encode()
         self.signature = rsa.sign(message, private_key, 'SHA-1') 
         
-        
 
     def verify(self):
         """
-        Verify an entry against the listed public key (see 
-        <whatever_crypto_package_we_end_up_using>/rsa)
+        Verify an entry against the listed public key (see package rsa)
         
         returns:
             True if verification is successful, False otherwise
         """
-        message = (self.song + self.vote).encode()
+        # TODO figure out authentication of keys
+        message = f'{self.song} - {self.vote}'.encode()
 
         try:
             rsa.verify(message, self.signature, self.public_key)
             return True
         except rsa.pkcs1.VerificationError as e:
-            print(f'Encountered verification error {e}')
+            print(f'Encountered verification error in Entry/verify() \n{e}')
             return False
         
+
     def serialize(self):
-        '''
-        Returns a JSON String representing the entry.
+        """
+        Serialize the entry to a JSON representation
 
         returns:
             string containing JSON
-        '''
-        return json.JSONEncoder().encode(self.__dict__)
+        """
+        self_dict = self.__dict__.copy()
+        self_dict['public_key'] = str(self_dict['public_key'].n)
+        self_dict['signature'] = str(self_dict['signature'])
+
+        return json.JSONEncoder().encode(self_dict)
 
 
 def deserialize(jsonin):
-    '''
+    """
     Returns an Entry object given a JSON string representation of the object.
 
     parameters:
@@ -68,8 +69,9 @@ def deserialize(jsonin):
     
     returns:
         Entry object filled with provided data
-    '''
+    """
+    # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
-    entry = Entry(js["song"], js["vote"], js["public_key"])
-    entry.signature = js["signature"]
+    entry = Entry(js['song'], js['vote'], js['public_key'])
+    entry.signature = js['signature'] 
     return entry
