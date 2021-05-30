@@ -142,7 +142,7 @@ class Client:
 					print(f"Got new connection from peer: {address}")
 
 				# User is sending from stdin
-				elif (socket is sys.stdin):
+				elif socket is sys.stdin:
 					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
