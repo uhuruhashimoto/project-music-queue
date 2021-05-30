@@ -1,7 +1,8 @@
 import hashlib
 import json
 
-from .entry import deserialize as deserialize_entry
+from entry import deserialize as deserialize_entry
+from entry import Entry
 
 NONCE_INIT = 0  # TODO convert this to correct 64-bit datatype once known
 
@@ -77,10 +78,11 @@ class Block:
         returns:
             string containing JSON
         """
+
         self_dict = self.__dict__.copy()
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+        self_dict['block_prev'] = None
         return json.JSONEncoder().encode(self_dict)
-
 
     def sha256(self):
         """
@@ -114,3 +116,19 @@ def deserialize(jsonin):
     block.hash_prev = js['signature']
 
     return block
+
+entries = []
+entries2 = []
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "yes", None))
+entries2.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "no", None))
+newblock = Block(entries, None, None)
+newblock2 = Block(entries2, None, None)
+
+newblock.serialize()
+

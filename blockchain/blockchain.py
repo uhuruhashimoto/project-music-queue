@@ -1,8 +1,8 @@
 import json
-import hashlib
 
-from .block import Block
-from .block import deserialize as deserialize_block
+import block
+from block import deserialize as deserialize_block
+from entry import Entry
 
 class Blockchain:
     def __init__(self):
@@ -11,7 +11,9 @@ class Blockchain:
         """
 
         #Set the head of the blockchain as an empty block
-        self.head = Block(None, None, None)
+        self.head = block.Block([], None, None)
+        self.head.block_prev = None
+        self.length = 0
 
     def add_block(self, block):
         """
@@ -21,8 +23,9 @@ class Blockchain:
             block -- Block to be added
         """
 
-        block.prev_block = self.head
+        block.block_prev = self.head
         self.head = block
+        self.length = self.length + 1
 
     def verify_chain(self, padding):
         """
@@ -40,6 +43,7 @@ class Blockchain:
         #also -> what is the "head" parameter in the Block.verify() function?
 
         ptr = self.head
+
 
         while ptr is not None:
             if (not ptr.verify()):
@@ -65,7 +69,7 @@ class Blockchain:
 
         return json.dumps(chain)
 
-def deserialize(jsonin, padding):
+def deserialize(jsonin):
     """
     Returns a Blockchain object given a JSON string representation of the object.
 
@@ -80,15 +84,9 @@ def deserialize(jsonin, padding):
     out = Blockchain()
 
     js = json.loads(jsonin)
-
+    js.pop()    
     for block in reversed(js):
         out.add_block(deserialize_block(block))
     
     return out
     
-
-
-    
-        
-
-        
