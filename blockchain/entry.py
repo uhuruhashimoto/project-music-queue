@@ -53,7 +53,11 @@ class Entry:
         returns:
             string containing JSON
         """
-        return json.JSONEncoder().encode(self.__dict__)
+        self_dict = self.__dict__.copy()
+        self_dict['public_key'] = str(self_dict['public_key'].n)
+        self_dict['signature'] = str(self_dict['signature'])
+
+        return json.JSONEncoder().encode(self_dict)
 
 
 def deserialize(jsonin):
