@@ -116,7 +116,9 @@ class Client:
 	Returns: nothing
 	"""
 	def runClient(self):
-		while True:
+        keepRunning = True
+        
+		while keepRunning:
 			# construct our list of fd's to listen to. We need to do this because
 			# of our choice to store peers as a list of 4-tuples, with the socket/fd
 			# being in the last slot of the tuple (index 3)
@@ -142,7 +144,9 @@ class Client:
 
 				# User is sending from stdin
 				elif (socket is sys.stdin):
-					pass
+					data = socket.recv(BUFF_SIZE*1000)
+                    if (data == "EXIT"):
+                        keepRunning = False
 				# tracker is sending data
 				elif (socket is self.trackerSock):
 					pass
@@ -161,54 +165,38 @@ class Client:
 	Preconditions:
 	- data is always non-None
 	"""
-	def handleP2PInput(self, data, socket):
-		#Data was read from socket buffer
-		shouldSend = False
+	def handleP2PInput(self, data, socket): 
+        # load the data into a json object
+		data = json.loads(data)
+		# see what kind of data we are receiving
+        flag = data["flag"]
 
-		# Figure out where this message came from
-		peername = socket.getpeername()
-		
-		# break the message into its header flag 
-		data = data.decode()
-		
-	
-		flag = data[0:3]
-		# and the actual JSON data
-		msg = data[4:len(data)-1]
-		# parse json into python dictionary
-		try:
-			msg = json.loads(msg)
-		except Exception as e:
-			print(f"Encountered error {e}")
-		
-		if (socket == self.trackerSock):
-			if (flag == "ADD"):
-				print("Received A list Of Peers")
-				self.connectToPeers(msg)
-		else:
-			if (flag == "NEW"):
-				# A fellow peer is telling us that they have connected and this is their publicKey
-				self.peers[peername[0]] = rsa.PublicKey(msg[0], msg[1])
+        if flag == "peers":
+            self.connectToPeers(data["clients"])
+        else:
+            print(f"Invalid flag!")
 
 
 	"""
 	Given a list of peers from the tracker,
-	attempt to establish tcp connections to all of them
+	attempt to establish tcp connections to all of them if they
+	are not already in our peer list.
+	
 	"""
-	def connectToPeers(self):
-		for peer in self.peers:
-			# self.clients[peername[0]] = (msg["port"], msg["publicKey"])
-			# Store the peer to this peer's publicKey 
-			value = dictionary[peer]
-			
-			if (value[2] == self.ip and int(value[0]) == self.myPort):
-				pass
-				# Don't connect to yourself 
-			else:
-				self.peers[peer] = rsa.PublicKey(value[1][0], value[1][1])
-				print(f"Connecting to {value[2]}, {int(value[0])}")
-				self.connectTo(value[2], int(value[0]))
-			# Create a connection with this peer
+	def connectToPeers(self, clientList):
+        seen = False
+
+		for client in clientList:
+            for peer in self.peers:
+                #client has been seen before
+                if (client[0] == peers[0])
+                    seen = True
+					break
+            if not seen:
+                newSock = socket(AF_INET, SOCK_STREAM) 
+                newSock.connect((client[0], client[1]))
+                self.peers.append(client[0], client[1], client[2], newSock)
+            
 
 	'''
 		Removes a peer from list of peers. Either the peer was

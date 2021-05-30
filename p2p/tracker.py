@@ -18,133 +18,127 @@ import select, sys, queue
 import json 
 from socket import *
 
+BUFF_SIZE = 1024 # in Kb
+
 # Port number that we open and wait for connections from clients
 class Tracker:
+	"""
+	Construct the tracker object. Tracker keeps track of the list of
+	clients for now. TODO: handle voting/blockchain stuff
+	"""
     def __init__(self):
         self.listeningPort = 60005
 
         # A list of all clients which sent to new clients
 		# 4-tuple of ips, port, public key, and socket
-        self.cients[]
+        self.clients = []
         
         self.ip = gethostbyname(gethostname())
+		print(f"Found our own ip: {self.ip}")
         
-        self.tracker_sock = None
+		# our listening socket
+        self.trackerSock = None
 
-        # Open Tracker Socket
+        # Open Tracker listening Socket
         self.Open()
 
-        self.clients.append((self.ip))
-
+    '''
+    Opens self.trackersock as a listening socket
+    '''
     def Open(self):
         # Create a socket and start listening on it
-        self.tracker_sock = socket(AF_INET, SOCK_STREAM)
+        self.trackerSock = socket(AF_INET, SOCK_STREAM)
         
-        self.tracker_sock.bind((self.ip, self.listeningPort))
-        self.tracker_sock.listen()
-        self.inputs.append(self.tracker_sock)
+        self.trackerSock.bind((self.ip, self.listeningPort))
+        self.trackerSock.listen()
+        self.inputs.append(self.trackerSock)
         print(f"Listening at {self.ip},{self.listeningPort}")
+
+    						
+	"""
+	Removes a client from the client list
+    Requires:
+        - the socket of the relevant client
+	"""
+    def removeClient(self, socket):
+        for client in self.clients:
+            if(client[3] == socket):
+                self.clients.remove(client)
+    						
+	"""
+	Handle p2p input.
+	Preconditions:
+	- data is always non-None
+	"""
+    def handleP2PInput(self, data, socket):
+		try:
+			data = json.loads(data)
+		except Exception as e:
+			print(f"Encountered error {e}")
         
-    # accepts a newClient. Tells all other clients to open a connection to this new client
-    # adds the newClient to the client list
-    def acceptNewClient():
-        # most likely call "broadCastNewClient"
-        pass
+        flag = msg["flag"]
 
+        #client is sending information
+        if (flag == "new"):
+            for client in self.clients:
+                if(client[3] == socket):
+                    client[2] = msg["publicKey"] #sets public key to a JSON deserialization of the public key __dict__
+                else:
+                    self.sendClientList(client[3])
+        else:
+            print(f"Invalid flag!")
 
-    # once a client signifies they are leaving we must tell everybody else 
-    # remove client from 'clients'
-    def removeClient():
-        pass
-
-    #tell all other clients they need to make a TCP connection with the new client 
-    def broadCastNewClient():
-        pass 
-    
+  						
+	"""
+	Send current client list
+	Preconditions:
+	- socket is connected
+	"""
     def sendClientList(self, socket):
-        jsonClients = json.dumps(self.clients, indent = None)
-        # Send the entire dictionary in jsonForm with a "ADD" header 
-        socket.send(bytes(f"ADD:{jsonClients};", 'utf-8'))
+        clientInfo = {"clients": json.dumps(self.clients), "flag": "peers"}
+        socket.send(clientInfo)
 
+    """
+    Runs tracker operations and recieves/sends data to peers
+	"""
     def runTracker(self):
-        while True:
+		keepRunning = True
+        while keepRunning:
             inputs = []
 			for client in self.clients:
 				inputs.append(client[3])
-            inputs.append(self.tracker_sock)
-            inputs, outputs, exceptional = select.select(self.inputs, self.outputs, self.inputs)
-            for socket in inputs:
+            inputs.append(self.trackerSock)
+            inputs.append(sys.stdin)
+
+            inSocks, outSocks, exceptionSocks = select.select(inputs, [], inputs)
+
+            for socket in exceptionSocks:
+				self.removeClient(socket)
+
+            for socket in inSocks:
                 # this means a client is attempting to create a new connection
-                if socket is self.tracker_sock:
+                if socket is self.trackerSock:
                     newConnection, address = socket.accept()
                     newConnection.setblocking(0)
-                    self.inputs.append(newConnection)
-                    self.outputs.append(newConnection)
+                    self.clients.append((address[0], address[1], None, newConnection))
                     print(f"Got new connection from {address}")
+                # client is sending data
+                elif socket is sys.stdin:
+                    data = socket.recv(BUFF_SIZE*1000)
+                    if (data == "EXIT"):
+                        keepRunning = False
                 else:
-                    
-                    data = socket.recv(4096)
-                    if data:
-                        # Figure out where this message came from 
-                        peername = socket.getpeername()
-                        # break the message into its header flag 
-                        data = data.decode('utf-8')
-                        flag = data[0:3]
-                        # and the actual JSON data
-                        msg = data[4:]
-                        # parse json into python dictionary
-                        try:
-                            msg = json.loads(msg)
-                        except:
-                            print("Was not properlly formatted to be converted to JSON")
-                        
-                        
-                        if(flag == "NEW"):
-                            # Before we add this client, Send this client the list of all other clients they need to connect to
-                            if (self.clients):
-                                self.sendClientList(socket)
-                            # A client has recently connected. Store their relevant information as a tuple
-                            p = msg["port"]
-                            # This code can actually occur during the sending of the list 
-                            self.clients[f"{p}:{peername[0]}"] = (msg["port"], msg["publicKey"], peername[0])
+					# read the socket
+					data = socket.recv(BUFF_SIZE*1000)
+					if data:
+						self.handleP2PInput(data, socket)
+					# No data was read from socket buffer, implies socket disconnect
+					else:
+						self.removeClient(socket)
 
-
-
-        
-
-
-            for socket in outputs:
-                pass
-            for socket in exceptional:
-                print("Removing exceptional")
-                ip = (socket.getpeername())[0]
-                try:
-                    self.clients.pop(ip)
-                except:
-                    print("client to remove not found")
-
-                try:
-                    self.inputs.remove(socket)
-                except:
-                    pass
-                try:
-                    self.outputs.remove(socket)
-                except:
-                    pass
-                print(self.clients)
-
-        self.tracker_sock.close()
-
+        self.trackerSock.close()
 
 
 if __name__ == "__main__":
     myTracker = Tracker()
     myTracker.runTracker()
-
-
-
-
-
-
-
-
