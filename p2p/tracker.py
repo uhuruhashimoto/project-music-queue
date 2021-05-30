@@ -53,53 +53,6 @@ class Tracker:
 		self.trackerSock.listen()
 		print(f"Listening at {self.ip},{self.listeningPort}")
 
-							
-	"""
-	Removes a client from the client list
-	Requires:
-		- the socket of the relevant client
-	"""
-	def removeClient(self, socket):
-		for client in self.clients:
-			if(client[3] == socket):
-				self.clients.remove(client)
-				print(f"Removed client {(client[0], client[1])}")
-							
-	"""
-	Handle p2p input.
-	Preconditions:
-	- data is always non-None
-	"""
-	def handleP2PInput(self, data, socket):
-		try:
-			data = json.loads(data)
-		except Exception as e:
-			print(f"Encountered error {e}")
-		
-		flag = data["flag"]
-
-		#client is sending information
-		if (flag == "new"):
-			for client in self.clients:
-				if(client[3] == socket):
-					self.clients.remove(client)
-					#sets public key to a JSON deserialization of the public key __dict__
-					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
-				else:
-					self.sendClientList(client[3])
-		else:
-			print(f"Invalid flag!")
-
-						
-	"""
-	Send current client list
-	Preconditions:
-	- socket is connected
-	"""
-	def sendClientList(self, socket):
-		clientInfo = {"clients": json.dumps(self.clients), "flag": "peers"}
-		socket.send(clientInfo)
-
 	"""
 	Runs tracker operations and recieves/sends data to peers
 	"""
@@ -126,7 +79,7 @@ class Tracker:
 					print(f"Got new connection from {address}")
 				# client is sending data
 				elif socket is sys.stdin:
-					data = socket.recv(BUFF_SIZE*1000)
+					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
 				else:
@@ -139,7 +92,51 @@ class Tracker:
 						self.removeClient(socket)
 
 		self.trackerSock.close()
+						
+	"""
+	Removes a client from the client list
+	Requires:
+		- the socket of the relevant client
+	"""
+	def removeClient(self, socket):
+		for client in self.clients:
+			if(client[3] == socket):
+				self.clients.remove(client)
+				print(f"Removed client {(client[0], client[1])}")
+				
+	"""
+	Handle p2p input.
+	Preconditions:
+	- data is always non-None
+	"""
+	def handleP2PInput(self, data, socket):
+		try:
+			data = json.loads(data)
+		except Exception as e:
+			print(f"Encountered error {e}")
+		
+		flag = data["flag"]
 
+		#client is sending information
+		if (flag == "new"):
+			for client in self.clients:
+				if(client[3] == socket):
+					self.clients.remove(client)
+					#sets public key to a JSON deserialization of the public key __dict__
+					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
+				else:
+					self.sendClientList(client[3])
+		else:
+			print(f"Invalid flag!")
+
+	"""
+	Send current client list
+	Preconditions:
+	- socket is connected
+	"""
+	def sendClientList(self, socket):
+		clientInfo = {"clients": json.dumps(self.clients), "flag": "peers"}
+		socket.send(clientInfo)
 
 if __name__ == "__main__":
 	myTracker = Tracker()
