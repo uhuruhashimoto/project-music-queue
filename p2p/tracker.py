@@ -19,6 +19,7 @@ import json
 from socket import *
 
 BUFF_SIZE = 1024 # in Kb
+HASH_PAD = 50    # hash padding for blocks
 
 # Port number that we open and wait for connections from clients
 class Tracker:
@@ -135,7 +136,7 @@ class Tracker:
 	- socket is connected
 	"""
 	def sendClientList(self, socket):
-		clientInfo = {"clients": json.dumps(self.clients), "flag": "peers"}
+		clientInfo = {"clients": json.dumps(self.clients), "pad": HASH_PAD "flag": "welcome"}
 		socket.send(clientInfo)
 
 if __name__ == "__main__":

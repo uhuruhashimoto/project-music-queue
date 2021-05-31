@@ -1,4 +1,3 @@
-
 """
 client.py
 Group 7: Project Music Queue
@@ -17,6 +16,7 @@ and then send and receive blocks use the block and blockchain API's
 
 import select, sys, queue
 import json 
+import blockchain/block
 from socket import *
 import rsa
 
@@ -28,6 +28,11 @@ class Client:
 	opens our ports.
 	"""
 	def __init__(self, trackerIp, trackerPort, listenPort, mining, keyFile):
+		self.blockchain = None
+
+		# padding required for valid block
+		self.hash_padding = 0
+
 		# get our host name
 		self.ip = gethostbyname(gethostname())
 		print(f"Found our own ip: {self.ip}")
@@ -170,8 +175,13 @@ class Client:
 		# see what kind of data we are receiving
 		flag = data["flag"]
 
-		if flag == "peers":
+		if flag == "welcome":
 			self.connectToPeers(data["clients"])
+			self.hash_padding = data["pad"]
+		elif flag == "blockchain":
+			self.updateBlockchain(data["chain"])
+		elif flag == "block":
+			self.recieveBlock(data["block"])
 		else:
 			print(f"Invalid flag!")
 
@@ -195,6 +205,9 @@ class Client:
 				newSock = socket(AF_INET, SOCK_STREAM) 
 				newSock.connect((client[0], client[1]))
 				self.peers.append(client[0], client[1], client[2], newSock)
+
+				blockchain_update = {"flag": "update"} 
+				newSock.send(blockchain_update)
 			
 
 	'''
@@ -236,23 +249,24 @@ class Client:
 
 		pass
 
-	def receiveBlock(self):
-		# this gets really tricky i think? Do we immediately assume its correct and then discard if we later see a longer fork?
-		# how does a fork actually work? multiple blocks point the the same block as a 'previous' 
-		# When do we discard 
-		pass 
+	def updateBlockchain(self, jsonin):
+		inchain = blockchain.deserialize(jsonin)
+		if self.blockchain.length < inchain.length and inchain.verify(self.hash_padding):
+			self.blockchain = inchain
+
+	def receiveBlock(self, jsonin):
+		inblock = block.deserialize(jsonin)
+		if inblock.verify() and inblock.hash_prev == self.blockchain.head.sha256():
+			self.blockchain.add_block(inblock)
 
 	def displayBlockChain(self):
-		# I'm not sure how actual implementations of block chain / bitcoin tally the entire ledger / blockchain. Im pretty sure they use clever data stuctures / or just someone keeps track of their balance from the get-go 
-		# but we need some way of displaying the entire block chain data... Maybe we only need to iterate over blocks we haven't iterated over and always keep track of the last block number that we have already tallied. 
-		pass 
+		ptr = self.blockchain.head
+		
+		while ptr is not None:
+			for entry in ptr.entries:
+				print(f"{entry.public_key} voted {entry.vote} for {entry.song}")
+			ptr = ptr.block_prev
 
-	# Generate private and public key pair so that we can sign our transactions and verify them... However maybe not necessary for the scope of the assignment
-	def generateKeys():
-		# most likely would just use an existing API for this 
-		#  https://pycryptodome.readthedocs.io/en/latest/src/public_key/rsa.html
-		pass
-	
 if __name__ == "__main__":
 	# parse command line args
 	trackerIp = sys.argv[1]
