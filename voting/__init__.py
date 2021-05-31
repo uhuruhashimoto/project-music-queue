@@ -1,2 +1,2 @@
-from .poll import *
+# from .poll import *
 from .tally import *
