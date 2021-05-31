@@ -3,6 +3,8 @@ import secrets
 from datetime import datetime
 from json import JSONEncoder
 
+YEA = 'T'
+NAY = 'F'
 
 class Poll:
     """

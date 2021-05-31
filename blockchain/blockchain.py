@@ -45,7 +45,7 @@ class Blockchain:
 
 
         while ptr is not None:
-            if (not ptr.verify()):
+            if (not ptr.verify() or ptr.hash_prev != ptr.block_prev.sha256()):
                 return False
             ptr = ptr.block_prev
 

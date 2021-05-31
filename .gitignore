@@ -12,3 +12,6 @@
 
 # vscode files lmao
 .vscode
+
+# bootstraping
+votechain.egg-info

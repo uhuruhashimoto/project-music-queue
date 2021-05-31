@@ -1,37 +1,34 @@
 import json
 import time
-from hashlib import sha256
+from block import *
 
-TIMEOUT = 1000000000000000000000000000000000000000000
+TIMEOUT = 10000000000 #arbitrarily large timeout
 
 ''' Collection of APIs used by client in mining mode (miner)
- miner takes a block and uses its data, hash, and nonce to mine
-Currently uses hashlib for sha256 implementation'''
+ miner takes a block and uses its data, hash, and nonce to mine'''
 
 #Inputs: block number, string of transactions, byte string prev hash, padding
-def mine(blocknum, transactions, prev_hash, hash_padding):
-	hash_val = '' #string for leading zeros
+def mine(block, shouldMine):
 	nonce = 0
 	is_mined = False
 	
-	pref = '0'*hash_padding
+	pref = '0'*hash_padding #string for leading zeros
 
 	#start time
 	t = time.time()
+
+	# serialize data to json string
+	txt = block.serialize().encode('utf-8')
 	
-	while not(is_mined):
-	#concatenate data
-		txt = str(blocknum) + str(transactions) + prev_hash + str(nonce)
-		
-		#compute hash val
-		hash_val = sha256(txt.encode("ascii")).hexdigest()
-		elapsed_time = time.time() - t
+	while not is_mined and shouldMine:
+		# compute hash val -- must always match block.py
+		hash_val = sha256(txt).hexdigest()
 
 		#check
-		if (hash_val.startswith(pref)):
+		if hash_val.startswith(pref):
     		is_mined = True
   		
-		if (elapsed_time > TIMEOUT):
+		if time.time()-t > TIMEOUT:
 			raise BaseException(f'Mining timeout')
   		
 		# increment nonce
@@ -40,6 +37,7 @@ def mine(blocknum, transactions, prev_hash, hash_padding):
 	return hash_val
 	
 	
-def mine(block, hash_padding):
-	mine(block.blocknum, block.entries.serialize(), block.hash_prev, hash_padding)
+# def mine_block(block, hash_padding):
+# 	hash_val = mine(block.entries.serialize(), block.hash_prev, hash_padding)
+# 	return hash_val
 	

@@ -1,13 +1,13 @@
 """
-Tracker.py
+ Tracker.py
 Group 7: Project Music Queue
 CS60 Dartmouth Xia Zhou 
 
 Jonah Weinbaum
-James Fleming
+James Fleming 
 Uhuru Hashimoto
-Thomas White
-Wendell Wu
+Thomas White 
+Wendell Wu 
 
 
 This class allows a user to create a new client. 
@@ -19,7 +19,6 @@ import json
 from socket import *
 
 BUFF_SIZE = 1024 # in Kb
-HASH_PAD = 50    # hash padding for blocks
 
 # Port number that we open and wait for connections from clients
 class Tracker:
@@ -27,13 +26,15 @@ class Tracker:
 	Construct the tracker object. Tracker keeps track of the list of
 	clients for now. TODO: handle voting/blockchain stuff
 	"""
-	def __init__(self):
-		self.listeningPort = 60005
+	def __init__(self, listeningPort, hashPadding):
+		self.listeningPort = listeningPort
+		self.hashPadding = hashPadding
 
 		# A list of all clients which sent to new clients
 		# 4-tuple of ips, port, public key, and socket
 		self.clients = []
 		
+		# get our own IP
 		self.ip = gethostbyname(gethostname())
 		print(f"Found our own ip: {self.ip}")
 		
@@ -41,25 +42,26 @@ class Tracker:
 		self.trackerSock = None
 
 		# Open Tracker listening Socket
-		self.Open()
+		self.openListenSocket()
 
 	'''
 	Opens self.trackersock as a listening socket
 	'''
-	def Open(self):
+	def openListenSocket(self):
 		# Create a socket and start listening on it
 		self.trackerSock = socket(AF_INET, SOCK_STREAM)
 		
 		self.trackerSock.bind((self.ip, self.listeningPort))
 		self.trackerSock.listen()
-		print(f"Listening at {self.ip},{self.listeningPort}")
+		print(f"Listening at {self.ip}:{self.listeningPort}")
 
 	"""
-	Runs tracker operations and recieves/sends data to peers
+	Runs tracker operations and receives/sends data to peers
 	"""
 	def runTracker(self):
 		keepRunning = True
 		while keepRunning:
+			# build our list of sources to listen to
 			inputs = []
 			for client in self.clients:
 				inputs.append(client[3])
@@ -69,31 +71,42 @@ class Tracker:
 			inSocks, outSocks, exceptionSocks = select.select(inputs, [], inputs)
 
 			for socket in exceptionSocks:
+				print(f"Socket {socket} had error. Removing...")
 				self.removeClient(socket)
 
+			# handle input sockets
 			for socket in inSocks:
-				# this means a client is attempting to create a new connection
-				if socket is self.trackerSock:
-					newConnection, address = socket.accept()
-					newConnection.setblocking(0)
-					self.clients.append((address[0], address[1], None, newConnection))
-					print(f"Got new connection from {address}")
-				# client is sending data
-				elif socket is sys.stdin:
+				if socket is sys.stdin:
 					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
 				else:
-					# read the socket
-					data = socket.recv(BUFF_SIZE*1000)
-					if data:
-						self.handleP2PInput(data, socket)
-					# No data was read from socket buffer, implies socket disconnect
-					else:
-						self.removeClient(socket)
+					self.readSocket(socket)
 
+		# close our listening sock when we're done
 		self.trackerSock.close()
-						
+
+	"""
+	Check a socket for different possible scenarios. Handles new connections,
+	user input from stdin, tracker data, peer data, and disconnects.
+	"""
+	def readSocket(self, socket):
+		# this means a client is attempting to create a new connection
+		if socket is self.trackerSock:
+			newConnection, address = socket.accept()
+			newConnection.setblocking(0)
+			self.clients.append((address[0], address[1], None, newConnection))
+			print(f"Got new connection from {address}")
+		# client is sending data			
+		else:
+			# read the socket
+			data = socket.recv(BUFF_SIZE*1000)
+			if data:
+				self.handleP2PInput(data, socket)
+			# No data was read from socket buffer, implies socket disconnect
+			else:
+				self.removeClient(socket)
+
 	"""
 	Removes a client from the client list
 	Requires:
@@ -123,7 +136,7 @@ class Tracker:
 			for client in self.clients:
 				if(client[3] == socket):
 					self.clients.remove(client)
-					#sets public key to a JSON deserialization of the public key __dict__
+					# sets public key to a JSON deserialization of the public key __dict__
 					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
 				else:
 					self.sendClientList(client[3])
@@ -136,9 +149,16 @@ class Tracker:
 	- socket is connected
 	"""
 	def sendClientList(self, socket):
-		clientInfo = {"clients": json.dumps(self.clients), "pad": HASH_PAD "flag": "welcome"}
+		clientInfo = {"clients": json.dumps(self.clients), "pad": self.hashPadding, "flag": "welcome"}
 		socket.send(clientInfo)
 
 if __name__ == "__main__":
-	myTracker = Tracker()
+	# parse command line arguments
+	listenPort = int(sys.argv[1])
+	hashPadding = int(sys.argv[2]) if len(sys.argv) >= 3 else 50
+	
+	# initialize Tracker object with these arguments
+	myTracker = Tracker(listenPort, hashPadding)
+
+	# go into the tracker's main while loop
 	myTracker.runTracker()

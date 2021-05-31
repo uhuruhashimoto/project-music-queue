@@ -108,12 +108,13 @@ Similar to the user interface, we should describe how data is input into the cli
 
 From the command line, the client will be run with:
 
-`./python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [key_file]`
+`./python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [mine_time] [key_file]`
 
 Where: 
 - `tracker_address` is the ip address of the tracker/server
 - `socket_port` is the port # of the tracker/server program
 -  `mining mode` indicates whether the client is willing to mine blocks and whether or not the client is able to request specific songs, input as a single char: T or F
+- `mine_time` is the seconds to wait before pulling from our vote pool and beginning to mine a block. By default, 30 seconds.
 
 Per the assignment requirement, we will use the port numbers assigned
 to us for lab 4:
@@ -125,10 +126,11 @@ to us for lab 4:
 
 The tracker will be run with:
 
-`./python3 tracker.py [hash_padding] [cycle_config] [timeout]`
+`./python3 tracker.py [listen_port] [hash_padding] [cycle_config] [timeout]`
 
 Where:
-- `hash_padding` indicates the number of bits to set to 0 for mining
+- `listen_port` indicates the port # to listen on for incoming connections
+- `hash_padding` indicates the number of bits to set to 0 for mining. 50 if not passed in.
 - `cycle_config` 
 - `timeout` is the maximum amount of time, in ms, which the tracker will wait for a response from peers
 

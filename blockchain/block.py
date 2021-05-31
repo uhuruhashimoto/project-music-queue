@@ -24,7 +24,7 @@ class Block:
         self.nonce = NONCE_INIT
         self.signature = None
         self.block_prev = None
-
+       
 
     def sign(self, private_key):
         
@@ -89,6 +89,7 @@ class Block:
 
         return json.JSONEncoder().encode(self_dict)
 
+
     def sha256(self):
         """
         Generate a SHA256 hash of the block's JSON representation
@@ -98,7 +99,7 @@ class Block:
         """
         sha = hashlib.sha256()
         sha.update(self.serialize().encode('utf-8'))
-        return sha.digest()
+        return sha.hexdigest()
 
 
 def deserialize(jsonin):
