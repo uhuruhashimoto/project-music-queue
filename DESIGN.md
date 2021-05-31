@@ -108,7 +108,7 @@ Similar to the user interface, we should describe how data is input into the cli
 
 From the command line, the client will be run with:
 
-`./python3 client.py [tracker_address] [socket_port] [mining mode] [key_file]`
+`./python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [key_file]`
 
 Where: 
 - `tracker_address` is the ip address of the tracker/server
@@ -244,6 +244,14 @@ as part of the blockchain. That way, entries/votes will be
 in object form for the program to use as necessary. Message types
 will be added as needed in the implementation of the application
 protocol.
+
+Flags (used by both client/tracker/miners):
+    new -- Used to signify the sending of client data [Used by clients]
+    update -- Used to signify that the sender would like an update of the peers' blockchains [Used by everyone]
+    blockchain -- Send the blockchain [Used by miners]
+    block -- Send a block [Used by miners]
+    entry -- Send a singular entry [Used by clients]
+
 
 ## The Protocol (Blockchain-Level)
 Json (or something similar) will be the primary serialization

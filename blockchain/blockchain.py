@@ -1,8 +1,7 @@
 import json
 
-import block
-from block import deserialize as deserialize_block
-from entry import Entry
+from .block import Block, deserialize as deserialize_block
+from .entry import Entry
 
 class Blockchain:
     def __init__(self):
@@ -11,7 +10,7 @@ class Blockchain:
         """
 
         #Set the head of the blockchain as an empty block
-        self.head = block.Block([], None, None)
+        self.head = Block([], None, None)
         self.head.block_prev = None
         self.length = 0
 
