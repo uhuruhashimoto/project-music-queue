@@ -3,6 +3,7 @@ import json
 import rsa
 
 from .entry import deserialize as deserialize_entry
+from .entry import Entry
 
 NONCE_INIT = 0  # TODO convert this to correct 64-bit datatype once known
 
@@ -22,6 +23,7 @@ class Block:
         self.hash_prev = hash_prev
         self.nonce = NONCE_INIT
         self.signature = None
+        self.block_prev = None
 
 
     def sign(self, private_key):
@@ -77,13 +79,15 @@ class Block:
         returns:
             string containing JSON
         """
+
         self_dict = self.__dict__.copy()
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+
+        self_dict['block_prev'] = None
         self_dict['public_key'] = str(self_dict['public_key'].n)
         self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)
-
 
     def sha256(self):
         """
@@ -118,3 +122,19 @@ def deserialize(jsonin):
     block.signature = js['signature']
 
     return block
+
+entries = []
+entries2 = []
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "yes", None))
+entries2.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "no", None))
+entries2.append(Entry("Backslide", "no", None))
+newblock = Block(entries, None, None)
+newblock2 = Block(entries2, None, None)
+
+newblock.serialize()
+
