@@ -2,8 +2,8 @@ import hashlib
 import json
 import rsa
 
-from entry import deserialize as deserialize_entry
-from entry import Entry
+from .entry import deserialize as deserialize_entry
+from .entry import Entry
 
 NONCE_INIT = 0  # TODO convert this to correct 64-bit datatype once known
 
