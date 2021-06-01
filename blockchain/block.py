@@ -57,7 +57,8 @@ class Block:
 
         message = self.entries[-1].serialize().encode()
         try:
-            rsa.verify(message, self.signature, self.public_key)
+            pk = self.public_key
+            rsa.verify(message, self.signature, rsa.PublicKey(pk[0], pk[1]))
         except rsa.pkcs1.VerificationError as e:
             print(f'Encountered verification error in Block/verify() \n{e}')
             return False
@@ -66,7 +67,7 @@ class Block:
             return False
 
         for entry in self.entries:
-            if not self.verify():
+            if not entry.verify():
                 return False
 
         return True
@@ -84,7 +85,6 @@ class Block:
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
 
         self_dict['block_prev'] = None
-        self_dict['public_key'] = str(self_dict['public_key'].n)
         self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)
@@ -101,6 +101,9 @@ class Block:
         sha.update(self.serialize().encode('utf-8'))
         return sha.hexdigest()
 
+    def getEntries(self):
+        return 
+
 
 def deserialize(jsonin):
     """
@@ -116,7 +119,8 @@ def deserialize(jsonin):
     js = json.loads(jsonin)
     
     entries = [deserialize_entry(entry_str) for entry_str in js['entries']]
-    public_key = rsa.PublicKey(n=int(js['public_key']), e=65537)
+    # what?
+    public_key = js["public_key"]
 
     block = Block(entries, public_key, js['hash_prev'])
     block.nonce = js['nonce']

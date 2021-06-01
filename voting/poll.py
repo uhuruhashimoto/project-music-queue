@@ -85,9 +85,9 @@ class PollResults:
         nays = 0
 
         for vote in votes:
-            if vote == 'yes': # TODO FIGURE OUT VOTING PROTOCOL
+            if vote == 'Y': # TODO FIGURE OUT VOTING PROTOCOL
                 yeas += 1
-            elif vote == 'no':
+            elif vote == 'N':
                 nays += 1        
 
         return yeas, nays

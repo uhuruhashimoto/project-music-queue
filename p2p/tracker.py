@@ -97,7 +97,7 @@ class Tracker:
 			newConnection.setblocking(0)
 			self.clients.append((address[0], address[1], None, newConnection))
 			print(f"Got new connection from {address}")
-		# client is sending data			
+		# client is sending data
 		else:
 			# read the socket
 			data = socket.recv(BUFF_SIZE*1000)
@@ -133,13 +133,17 @@ class Tracker:
 
 		#client is sending information
 		if (flag == "new"):
+			# linear search for the client that sent this
 			for client in self.clients:
+				# if we match the target socket
 				if(client[3] == socket):
 					self.clients.remove(client)
 					# sets public key to a JSON deserialization of the public key __dict__
 					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
+				# send to the client which is not this new client
 				else:
 					self.sendClientList(client[3])
+					break
 		else:
 			print(f"Invalid flag!")
 
