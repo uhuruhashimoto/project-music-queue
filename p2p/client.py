@@ -88,6 +88,9 @@ class Client:
 		self.killMine = False
 		self.miningResult = None
 
+		# boolean for exiting the program
+		self.keepRunning = True
+
 	"""
 	Initialize our own listening socket.
 	Takes nothing, returns nothing.
@@ -142,9 +145,9 @@ class Client:
 	Returns: nothing
 	"""
 	def runClient(self):
-		keepRunning = True
+		self.keepRunning = True
 		
-		while keepRunning:
+		while self.keepRunning:
 			# construct our list of fd's to listen to. We need to do this because
 			# of our choice to store peers as a list of 4-tuples, with the socket/fd
 			# being in the last slot of the tuple (index 3)
@@ -170,7 +173,7 @@ class Client:
 	def readSocket(self, socket):
 		# A new peer is trying to connect with us, we should accept them
 		# (they will send public key later)
-		if (socket is self.myListeningSock):
+		if socket is self.myListeningSock:
 			newConnection, address = socket.accept()
 			self.peers.append((address[0], address[1], None, newConnection))
 			print(f"Got new connection from peer: {address}")
@@ -179,7 +182,7 @@ class Client:
 		elif socket is sys.stdin:
 			data = sys.stdin.readline().strip()
 			if (data == "EXIT"):
-				keepRunning = False
+				self.keepRunning = False
 			elif (data == "Y" or data == "N"):
 				self.sendVote(data)
 			else:
@@ -187,8 +190,17 @@ class Client:
 				
 		# tracker is sending data
 		elif (socket is self.trackerSock):
-			print(f"Received new tracker message.")
-			pass # TODO: parse tally message once received
+				# read the socket
+			data = socket.recv(BUFF_SIZE*1000)
+			if data:
+				print(f"Received new tracker message.")
+				self.handleP2PInput(data, socket)
+				# TODO: handle tracker tally
+			# No data was read from socket buffer, implies socket disconnect
+			else:
+				print(f"Tracker went down! AHHHH!!!")
+				exit(1)
+	
 		#peer is sending data
 		else:
 			# read the socket
@@ -283,6 +295,8 @@ class Client:
 		elif flag == "poll":
 			print("Poll recieved")
 			self.recievePoll(data["poll"])
+		elif flag == "update":
+			socket.send(self.blockchain.serialize())
 		else:
 			print(f"Invalid flag!")
 
@@ -294,14 +308,15 @@ class Client:
 	are not already in our peer list.
 	"""
 	def connectToPeers(self, clientList):
+		clientList = json.loads(clientList)
 		for client in clientList:
 			if client[0] != self.ip:
+				print(f"Attempting connection to {client[0]}:{client[1]}")
 				newSock = socket(AF_INET, SOCK_STREAM) 
 				newSock.connect((client[0], client[1]))
-				self.peers.append(client[0], client[1], client[2], newSock)
+				self.peers.append((client[0], client[1], client[2], newSock))
 				print(f"Added peer {client[0]}:{client[1]}")
-				blockchain_update = {"flag": "update"}
-				newSock.send(blockchain_update)
+
 
 	'''
 		Removes a peer from list of peers. Either the peer was
@@ -310,15 +325,11 @@ class Client:
 			socket - socket of the peer which is disconnected
 	'''
 	def removePeer(self, socket):
-		peername = socket.getpeername()
-		self.peers.pop(peername, None)
-
-		try:
-			self.inputs.remove(socket)
-			self.outputs.remove(socket)
-		except Exception as e:
-			print(f"Encountered error {e}")
-
+		for client in self.peers:
+			if client[3] == socket:
+				self.peers.remove(client)
+				print(f"Removed peer: {client[0]}:{client[1]}")
+				break
 
 	def sendToPeers(self, JSONData):
 		for peer in self.peers:
@@ -371,7 +382,6 @@ class Client:
 				pass
 
 	def recieveEntry(self, jsonin):
-			
 			# Receive the entry
 			recievedEntry = blockchain.entry.deserialize(jsonin)
 			# Update the entries dictionary to point from the unique id to the entry itself
@@ -405,6 +415,7 @@ class Client:
 		jsonout = json.dumps({"entry": blockchain.entry.serialize(newEntry), "flag": "entry"})
 		# send it out 
 		self.sendToPeers(jsonout)
+
 
 if __name__ == "__main__":
 	# parse command line args

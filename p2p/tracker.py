@@ -1,5 +1,5 @@
 """
- Tracker.py
+Tracker.py
 Group 7: Project Music Queue
 CS60 Dartmouth Xia Zhou 
 
@@ -105,7 +105,7 @@ class Tracker:
 		if socket is self.trackerSock:
 			newConnection, address = socket.accept()
 			newConnection.setblocking(0)
-			self.clients.append((address[0], address[1], None, newConnection))
+			self.clients.append((address[0], None, None, newConnection))
 			print(f"Got new connection from {address}")
 		# client is sending data
 		else:
@@ -141,7 +141,7 @@ class Tracker:
 		
 		flag = data["flag"]
 
-		#client is sending information
+		# client is sending information
 		if (flag == "new"):
 			# linear search for the client that sent this
 			for client in self.clients:
@@ -149,11 +149,10 @@ class Tracker:
 				if(client[3] == socket):
 					self.clients.remove(client)
 					# sets public key to a JSON deserialization of the public key __dict__
-					self.clients.append((client[0], client[1], data["publicKey"], client[3]))
-				# send to the client which is not this new client
-				else:
+					self.clients.append((client[0], int(data["port"]), data["publicKey"], client[3]))
 					self.sendClientList(client[3])
 					break
+
 		else:
 			print(f"Invalid flag!")
 
@@ -163,8 +162,12 @@ class Tracker:
 	- socket is connected
 	"""
 	def sendClientList(self, socket):
-		clientInfo = {"clients": json.dumps(self.clients), "pad": self.hashPadding, "flag": "welcome"}
-		socket.send(clientInfo)
+		out = []
+		for client in self.clients:
+			out.append((client[0], client[1], client[2]))
+		clientInfo = json.dumps({"clients": json.dumps(out), "pad": self.hashPadding, "flag": "welcome"})
+		socket.send(clientInfo.encode())
+
 
 if __name__ == "__main__":
 	# parse command line arguments
