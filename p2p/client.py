@@ -187,11 +187,13 @@ class Client:
 				
 		# tracker is sending data
 		elif (socket is self.trackerSock):
-			pass
+			print(f"Received new tracker message.")
+			pass # TODO: parse tally message once received
 		#peer is sending data
 		else:
 			# read the socket
 			data = socket.recv(BUFF_SIZE*1000)
+			print(f"Received new peer message.")
 			if data:
 				self.handleP2PInput(data, socket)
 			# No data was read from socket buffer, implies socket disconnect
@@ -202,6 +204,7 @@ class Client:
 	Mines a block 
 	"""
 	def mine(self, block):
+		print("Starting to Mine!")
 		is_mined = False
 
 		pref = '0'*self.hash_padding #string for leading zeros
@@ -241,7 +244,7 @@ class Client:
 	thread.
 	"""
 	def timerThread(self):
-		startTime = time.time()
+		print("Starting a timer. Once it completes we will mine!")
 		time.sleep(self.timeToMine)
 		self.killMine = False
 		
@@ -265,15 +268,20 @@ class Client:
 		flag = data["flag"]
 
 		if flag == "welcome":
+			print("Welcome info recieved")
 			self.connectToPeers(data["clients"])
 			self.hash_padding = data["pad"]
 		elif flag == "blockchain":
+			print("Blockchain recieved")
 			self.updateBlockchain(data["chain"])
 		elif flag == "block":
+			print("Block recieved")
 			self.recieveBlock(data["block"], data["length"])
 		elif flag == "entry" and self.mining:
+			print("Entry recieved")
 			self.recieveEntry(data["entry"])
 		elif flag == "poll":
+			print("Poll recieved")
 			self.recievePoll(data["poll"])
 		else:
 			print(f"Invalid flag!")
@@ -291,7 +299,7 @@ class Client:
 				newSock = socket(AF_INET, SOCK_STREAM) 
 				newSock.connect((client[0], client[1]))
 				self.peers.append(client[0], client[1], client[2], newSock)
-
+				print(f"Added peer {client[0]}:{client[1]}")
 				blockchain_update = {"flag": "update"}
 				newSock.send(blockchain_update)
 
@@ -323,28 +331,15 @@ class Client:
 					print("Tried sending to a bad place, removing socket")
 					self.remove_Socket(peer)
 
-
-	# uses Block Api to first mine, and then attempt to send a block to be included in the block chain
-	def sendBlock(self):
-		# if i receive a block during my attempt to mine and send a block what happens? 
-		# do i give up on sending that block and just try to send another block? I mean i have to stop mining right? cause now what im hashing on
-		# specifically "last hash" has changed. So do i just keep trying to get my message out over and over again until finally I get lucky enough and mine before anyone else. 
-		# What if the proper Nonce value for the block I want to send is just super large? Then isnt linearly mining improper as it will always take longer to mine than a shorter Nonce ? but randoming mining would maybe check values multiple times and take much longer
-
-		pass
-
-
 	# Receives an entire blockchain. Sets it to our blockchain if valid 
 	def updateBlockchain(self, jsonin):
 		inchain = blockchain.deserialize(jsonin)
 		if self.blockchain.length < inchain.length and inchain.verify(self.hash_padding):
 			self.blockchain = inchain
 
-
 	def askBlockchain(self):
 		update_msg = {"flag": "update"}
 		self.sends(update_msg)
-
 
 	# Prints the block chain to the command line
 	def displayBlockChain(self):
@@ -354,7 +349,6 @@ class Client:
 			for entry in ptr.entries:
 				print(f"{entry.public_key} voted {entry.vote} for {entry.poll_id}")
 			ptr = ptr.block_prev
-
 
 	# Recieves a block. Decide whether or not to add to our current blockchain. 
 	def receiveBlock(self, block, length):
@@ -366,6 +360,7 @@ class Client:
 				self.blockchain.add_block(inblock)
 				self.killMine = True
 				# Remove any entries in this new block from our entries pool
+				print("Successfuly Added a new Block to our blockchain")
 				
 			elif length > self.blockchain.length + 1:
 				self.askBlockchain()
@@ -376,17 +371,19 @@ class Client:
 				pass
 
 	def recieveEntry(self, jsonin):
+			
 			# Receive the entry
 			recievedEntry = blockchain.entry.deserialize(jsonin)
 			# Update the entries dictionary to point from the unique id to the entry itself
 			if recievedEntry.verify():
 				self.entries[recievedEntry.getID()] = recievedEntry
-
-			# first entry we have receieved
-			if len(self.entries.keys()) == 1:
-				# kick off the timer thread
-				t2 = threading.Thread(self.timerThread)
-				t2.start()	
+				print("Received a valid entry")
+				# first entry we have receieved
+				if len(self.entries.keys()) == 1:
+					# kick off the timer thread
+					
+					t2 = threading.Thread(self.timerThread)
+					t2.start()	
 				
 	def recievePoll(self, jsonin):
 		poll = Poll.deserialize(jsonin)
@@ -397,16 +394,17 @@ class Client:
 
 		print(f"A poll has started. We are voting on {poll.song}. Vote 'Y/N'.")
 
-		
+	"""
+	Send a vote inputted by the user for the current poll
+	to the network.
+	 - data should be a string of either "Y" or "N"
+	"""
 	def sendVote(self, data):
 		# make an entry object
 		newEntry = blockchain.entry.Entry(self.poll_id, data, self.pk)
-		newEntry = blockchain.entry.serialize(newEntry)
+		jsonout = json.dumps({"entry": blockchain.entry.serialize(newEntry), "flag": "entry"})
 		# send it out 
-		self.sendToPeers()
-
-		
-
+		self.sendToPeers(jsonout)
 
 if __name__ == "__main__":
 	# parse command line args

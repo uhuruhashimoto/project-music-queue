@@ -17,6 +17,7 @@ Connect to the tracker and then all the peers, and then send and receive blocks 
 import select, sys, queue
 import json 
 from socket import *
+from  voting.poll import Poll
 
 BUFF_SIZE = 1024 # in Kb
 
@@ -29,6 +30,8 @@ class Tracker:
 	def __init__(self, listeningPort, hashPadding):
 		self.listeningPort = listeningPort
 		self.hashPadding = hashPadding
+
+		self.blockchain = None
 
 		# A list of all clients which sent to new clients
 		# 4-tuple of ips, port, public key, and socket
@@ -80,6 +83,13 @@ class Tracker:
 					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
+					else:
+						# Send a poll, for now just assume whatever we read was name of poll
+						# new poll
+						newPoll = Poll(data)
+						jsonOut = json.dumps({"poll": newPoll.serialize(), "flag":"poll"})
+						for client in self.clients:
+							client[3].send(jsonOut.encode())
 				else:
 					self.readSocket(socket)
 
