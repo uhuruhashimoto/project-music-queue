@@ -15,6 +15,7 @@ Connect to the tracker and then all the peers,
 and then send and receive blocks use the block and blockchain API's
 """
 
+import argparse
 import select, sys, queue
 import json 
 import blockchain.block
@@ -37,7 +38,7 @@ class Client:
 	Initialize our client object, sets our parameters, and
 	opens our ports.
 	"""
-	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToMine, keyFile):
+	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToMine, keyPaths):
 		# Start us off with an initial Blockchain that we can add to . We will also call for all clients to update us with theirs
 		self.blockchain = blockchain.blockchain.Blockchain()
 
@@ -54,14 +55,24 @@ class Client:
 		self.ip = gethostbyname(gethostname())
 		
 
-		# my public and private keys, first parameter is number of bits
-		# might have slightly less if accurate is set to false
-		if keyFile is None:
-			self.publicKey, self.privateKey  = rsa.newkeys(512,accurate = False)
-			self.pk = (self.publicKey.n, self.publicKey.e)
-			#print(f"Generated our own keys. PK: {self.publicKey}")
+		if keyPaths:
+			try:
+				with open(keyPaths[0], 'rb') as keyFile:
+					keyData = keyFile.read()
+				self.publicKey = rsa.PublicKey.load_pkcs1(keyData)
+
+				with open(keyPaths[1], 'rb') as keyFile:
+					keyData = keyFile.read()
+				self.privateKey = rsa.PrivateKey.load_pkcs1(keyData)
+				print(f'Loaded keys from file. PK: \n{self.publicKey}')
+			except Exception as e:
+				print(f'Error encountered while attempting to load keys from file')
+				raise e
 		else:
-			pass # read keyfile here, TODO
+			# might have slightly less if accurate is set to false
+			self.publicKey, self.privateKey  = rsa.newkeys(nbits=512,accurate = False)
+			self.pk = (self.publicKey.n, self.publicKey.e)
+			print(f"Generated our own keys. PK: {self.publicKey}")
 
 		# dictionary to hold peers, mapping their
 		# 4-tuple of ips, port, public key, and socket
@@ -474,19 +485,19 @@ class Client:
 
 
 if __name__ == "__main__":
-	# parse command line args
-	trackerIp = sys.argv[1]
-	trackerPort = int(sys.argv[2])
-	listenPort = int(sys.argv[3])
-	# true if it is not passed, otherwise, T or F
-	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
-	# If mining is true, set the time to mine here
-	miningTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
-	# only assigned if it is passed
-	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
+	argparser = argparse.ArgumentParser(description='Run a votechain client!', add_help=True)
+	argparser.add_argument('-t', '--tracker-ip', default=None, help='set the tracker ip to use')
+	argparser.add_argument('-tp', '--tracker-port', default=None, help='set the port to send data to the tracker')
+	argparser.add_argument('-lp', '--listen-port', default=None, help='set the port to use for listening')
+	argparser.add_argument('-tp', '--tracker-port', default=None, help='set the port to use on the tracker')
+	argparser.add_argument('-m', '--mining', default='T', help='set this flag to enable mining')
+	argparser.add_argument('-mt', '--mining-time', default=30, help='set the time to mine')
+	argparser.add_argument('-pub', '--public-key', default=None, help='pass a path for RSA public key')
+	argparser.add_argument('-priv', '--private-key', default=None, help='pass a path for RSA private key')
+	args = argparser.parse_args()
 
 	# initialize Client object with these arguments
-	myClient = Client(trackerIp, trackerPort, listenPort, mining, miningTime, keyFile)
+	myClient = Client(args.tracker_ip, args.tracker_port, args.listen_port, args.mining, args.mining_time, (args.public_key, args.private_key))
 
 	# go into our client's main while loop
 	myClient.runClient()

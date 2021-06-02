@@ -2,6 +2,7 @@ import json
 import rsa
 import hashlib
 
+
 class Entry: 
     def __init__(self, poll_id, vote, public_key):
         """
@@ -17,10 +18,12 @@ class Entry:
         self.public_key = public_key
         self.signature = None
     
+
     def getID(self):
         sha = hashlib.sha256()
         sha.update((self.poll_id + str(self.public_key[0]) + str(self.public_key[1])).encode('utf-8'))
         return sha.hexdigest()
+
 
     def sign(self, private_key):
         """
