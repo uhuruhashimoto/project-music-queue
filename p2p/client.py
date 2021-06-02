@@ -19,6 +19,7 @@ import select, sys, queue
 import json 
 import blockchain.block
 import blockchain.entry
+import blockchain.blockchain
 import voting.poll
 from  voting.poll import Poll
 from socket import *
@@ -36,7 +37,8 @@ class Client:
 	opens our ports.
 	"""
 	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToMine, keyFile):
-		self.blockchain = None
+		# Start us off with an initial Blockchain that we can add to . We will also call for all clients to update us with theirs
+		self.blockchain = blockchain.blockchain.Blockchain()
 
 		# padding required for valid block
 		self.hash_padding = 0
@@ -188,6 +190,10 @@ class Client:
 				self.keepRunning = False
 			elif (data == "Y" or data == "N"):
 				self.sendVote(data)
+			elif(data =="PRINT"):
+				# User is asking to see the current block chain !
+				
+				self.displayBlockChain()
 			else:
 				print("Did not understand input. Please try again.")
 				
@@ -342,10 +348,10 @@ class Client:
 				# Has a header, the jsonData one wants to send and an "EOF" symbol which I have been using ';' for 
 				try:
 					peer[3].send(JSONData.encode())
-				except:
+				except Exception as e:
 					# Not good to send to a broken pipe!
-					print("Tried sending to a bad place, removing socket")
-					self.remove_Socket(peer)
+					print(f"Tried sending {JSONData} to {peer[3]}, but it failed with exception {e} so I am removing socket")
+					self.removePeer(peer)
 
 	# Receives an entire blockchain. Sets it to our blockchain if valid 
 	def updateBlockchain(self, jsonin):
@@ -356,7 +362,7 @@ class Client:
 
 	# 
 	def askBlockchain(self):
-		update_msg = {"flag": "update"}
+		update_msg = json.dumps({"flag": "update"})
 		self.sendToPeers(update_msg)
 
 	# Prints the block chain to the command line
@@ -364,8 +370,12 @@ class Client:
 		ptr = self.blockchain.head
 		
 		while ptr is not None:
-			for entry in ptr.entries:
-				print(f"{entry.public_key} voted {entry.vote} for {entry.poll_id}")
+			if ptr.entries:
+				for entry in ptr.entries:
+					print(f"{entry.public_key} voted {entry.vote} for {entry.poll_id}")
+				
+			else:
+				print("Empty Block")
 			ptr = ptr.block_prev
 
 	# Recieves a block. Decide whether or not to add to our current blockchain. 

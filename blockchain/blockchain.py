@@ -38,8 +38,7 @@ class Blockchain:
             True if the entire blockchain is valid, False otherwise
         """
 
-        #TODO add padding functionality to block verification 
-        #also -> what is the "head" parameter in the Block.verify() function?
+      
 
         ptr = self.head
 
