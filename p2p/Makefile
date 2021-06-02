@@ -3,11 +3,11 @@
 PYTHON = python3
 
 # Port numbers
-TRACKER_PORT = 60006
+TRACKER_PORT = 60007
 
 # Arguments for client program
 # [tracker_address] [tracker_port] [self_port] [mining mode] [key_file]
-CLIENT_ARGS = babylon8.thayer.dartmouth.edu $(TRACKER_PORT) 60010 T 30
+CLIENT_ARGS = babylon8.thayer.dartmouth.edu $(TRACKER_PORT) 60008 F 30
 
 # Arguments for tracker program
 # [hash_padding] [cycle_config] [timeout]

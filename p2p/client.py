@@ -19,6 +19,7 @@ import select, sys, queue
 import json 
 import blockchain.block
 import blockchain.entry
+import voting.poll
 from  voting.poll import Poll
 from socket import *
 import rsa
@@ -43,6 +44,8 @@ class Client:
 		# poll information for the current cycle
 		self.poll_id = None
 		self.poll = None
+
+		self.mining = mining
 
 		# get our host name
 		self.ip = gethostbyname(gethostname())
@@ -336,7 +339,7 @@ class Client:
 			if peer[3] != self.trackerSock and peer[3] != sys.stdin and peer[3] != self.myListeningSock:
 				# Has a header, the jsonData one wants to send and an "EOF" symbol which I have been using ';' for 
 				try:
-					peer.send(bytes(JSONData, 'utf-8'))
+					peer[3].send(JSONData.encode())
 				except:
 					# Not good to send to a broken pipe!
 					print("Tried sending to a bad place, removing socket")
@@ -396,7 +399,7 @@ class Client:
 					t2.start()	
 				
 	def recievePoll(self, jsonin):
-		poll = Poll.deserialize(jsonin)
+		poll = voting.poll.deserialize(jsonin)
 		
 		# Store the poll for display.
 		self.poll = poll
@@ -412,7 +415,7 @@ class Client:
 	def sendVote(self, data):
 		# make an entry object
 		newEntry = blockchain.entry.Entry(self.poll_id, data, self.pk)
-		jsonout = json.dumps({"entry": blockchain.entry.serialize(newEntry), "flag": "entry"})
+		jsonout = json.dumps({"entry": newEntry.serialize(), "flag": "entry"})
 		# send it out 
 		self.sendToPeers(jsonout)
 
