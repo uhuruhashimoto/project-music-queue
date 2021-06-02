@@ -483,7 +483,7 @@ class Client:
 		
 
 
-
+"""
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(description='Run a votechain client!', add_help=True)
 	argparser.add_argument('-t', '--tracker-ip', default=None, help='set the tracker ip to use')
@@ -498,6 +498,27 @@ if __name__ == "__main__":
 
 	# initialize Client object with these arguments
 	myClient = Client(args.tracker_ip, args.tracker_port, args.listen_port, args.mining, args.mining_time, (args.public_key, args.private_key))
+
+	# go into our client's main while loop
+	myClient.runClient()
+
+	print(f"Exiting client program...")
+"""
+
+if __name__ == "__main__":
+	# parse command line args
+	trackerIp = sys.argv[1]
+	trackerPort = int(sys.argv[2])
+	listenPort = int(sys.argv[3])
+	# true if it is not passed, otherwise, T or F
+	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
+	# If mining is true, set the time to mine here
+	miningTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
+	# only assigned if it is passed
+	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
+
+	# initialize Client object with these arguments
+	myClient = Client(trackerIp, trackerPort, listenPort, mining, miningTime, keyFile)
 
 	# go into our client's main while loop
 	myClient.runClient()

@@ -170,7 +170,7 @@ class Tracker:
 		clientInfo = json.dumps({"clients": json.dumps(out), "pad": self.hashPadding, "flag": "welcome"})
 		socket.send(clientInfo.encode())
 
-
+"""
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(description='Run a votechain tracker!', add_help=True)
 	argparser.add_argument('-l', '--listen-port', default=None, help='set the port to listen at')
@@ -182,3 +182,17 @@ if __name__ == "__main__":
 
 	# go into the tracker's main while loop
 	myTracker.runTracker()
+
+"""
+
+if __name__ == "__main__":
+	# parse command line arguments
+	listenPort = int(sys.argv[1])
+	hashPadding = int(sys.argv[2]) if len(sys.argv) >= 3 else 50
+	
+	# initialize Tracker object with these arguments
+	myTracker = Tracker(listenPort, hashPadding)
+
+	# go into the tracker's main while loop
+	myTracker.runTracker()
+
