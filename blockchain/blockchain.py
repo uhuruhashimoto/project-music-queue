@@ -3,6 +3,7 @@ import json
 from .block import Block, deserialize as deserialize_block
 from .entry import Entry
 
+
 class Blockchain:
     def __init__(self):
         """
@@ -13,6 +14,7 @@ class Blockchain:
         self.head = Block([], None, None)
         self.head.block_prev = None
         self.length = 0
+
 
     def add_block(self, block):
         """
@@ -25,6 +27,7 @@ class Blockchain:
         block.block_prev = self.head
         self.head = block
         self.length = self.length + 1
+
 
     def verify_chain(self, padding):
         """
@@ -50,6 +53,7 @@ class Blockchain:
 
         return True
 
+
     def serialize(self):
         """
         Serialize the object to a JSON representation
@@ -66,6 +70,7 @@ class Blockchain:
             ptr = ptr.block_prev
 
         return json.dumps(chain)
+
 
 def deserialize(jsonin):
     """
@@ -87,4 +92,3 @@ def deserialize(jsonin):
         out.add_block(deserialize_block(block))
     
     return out
-    

@@ -5,7 +5,7 @@ import rsa
 from .entry import deserialize as deserialize_entry
 from .entry import Entry
 
-NONCE_INIT = 0  # TODO convert this to correct 64-bit datatype once known
+NONCE_INIT = 0
 
 
 class Block:
@@ -51,9 +51,6 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        # TODO figure out authentication of keys
-        # if self.public_key <isn't one we trust>
-        #    return False
 
         message = self.entries[-1].serialize().encode()
         try:
@@ -115,7 +112,6 @@ def deserialize(jsonin):
     returns:
         Block object filled with provided data
     """
-    # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
     
     entries = [deserialize_entry(entry_str) for entry_str in js['entries']]
@@ -127,19 +123,3 @@ def deserialize(jsonin):
     block.signature = js['signature']
 
     return block
-
-entries = []
-entries2 = []
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "yes", None))
-entries2.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "no", None))
-newblock = Block(entries, None, None)
-newblock2 = Block(entries2, None, None)
-
-newblock.serialize()
-
