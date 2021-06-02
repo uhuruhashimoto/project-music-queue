@@ -1,6 +1,6 @@
 import secrets
 import json
-
+import pytz 
 from datetime import datetime
 from json import JSONEncoder
 
@@ -24,9 +24,9 @@ class Poll:
             a Poll instance
         """
         self.song = song
-
-        self.start_time = datetime.now(tz='utc').strftime('%Y-%M-%D %h:%m')  # submitter and start_time for demo purposes
-        self.poll_id = secrets.token_bytes(16)  # generate a 16-byte random token id 
+        timezone = pytz.timezone('utc')
+        self.start_time = datetime.now(tz=timezone).strftime('%Y-%M-%D %h:%m')  # submitter and start_time for demo purposes
+        self.poll_id = secrets.token_bytes(16).hex()  # generate a 16-byte random token id 
         # for the poll to prevent duplication issues
 
 
@@ -106,3 +106,7 @@ class PollResults:
             JSON representation of PollResults
         """
         return JSONEncoder.encode(self.__dict__)
+
+
+
+myPoll = Poll("chilltestsong")

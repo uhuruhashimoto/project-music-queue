@@ -165,6 +165,7 @@ class Tracker:
 		out = []
 		for client in self.clients:
 			out.append((client[0], client[1], client[2]))
+		#TODO ALSO SEND THE INITIAL BLOCKCHAIN HERE, SO ATLEAST EVERY CLIENT HAS SOMETHING TO START WITH and Then it is every clients job to call "getBlockchain"
 		clientInfo = json.dumps({"clients": json.dumps(out), "pad": self.hashPadding, "flag": "welcome"})
 		socket.send(clientInfo.encode())
 

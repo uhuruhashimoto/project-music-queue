@@ -230,7 +230,7 @@ class Client:
 		# serialize data to json string
 		txt = block.serialize().encode('utf-8')
 
-		while not is_mined and self.shouldMine:
+		while not is_mined and not self.killMine:
 			# compute hash val -- must always match block.py
 			hash_val = hashlib.sha256(txt).hexdigest()
 
@@ -264,10 +264,10 @@ class Client:
 		self.killMine = False
 		
 		# Fill the block object and start the mine thread
-		block = blockchain.block.Block(self.entries, self.public_key, self.blockchain.head.sha256())
-		block.sign(self.private_key)
+		block = blockchain.block.Block(self.entries, self.publicKey, self.blockchain.head.sha256())
+		block.sign(self.privateKey)
 		
-		t1 = threading.Thread(self.mine, (block, self.hash_padding, not self.killMine), daemon=True)
+		t1 = threading.Thread(target=self.mine, args=(block), daemon=True)
 		t1.start()
 		
 		
@@ -301,7 +301,7 @@ class Client:
 		elif flag == "update":
 			socket.send(self.blockchain.serialize())
 		else:
-			print(f"Invalid flag!")
+			print(f"Invalid flag: {flag}")
 
 	
 
@@ -319,6 +319,8 @@ class Client:
 				newSock.connect((client[0], client[1]))
 				self.peers.append((client[0], client[1], client[2], newSock))
 				print(f"Added peer {client[0]}:{client[1]}")
+		print("Finished Connection to peers will now ask for the blockchain")
+		self.askBlockchain()
 
 
 	'''
@@ -351,9 +353,11 @@ class Client:
 		if self.blockchain.length < inchain.length and inchain.verify(self.hash_padding):
 			self.blockchain = inchain
 
+
+	# 
 	def askBlockchain(self):
 		update_msg = {"flag": "update"}
-		self.sends(update_msg)
+		self.sendToPeers(update_msg)
 
 	# Prints the block chain to the command line
 	def displayBlockChain(self):
@@ -377,6 +381,9 @@ class Client:
 				print("Successfuly Added a new Block to our blockchain")
 				
 			elif length > self.blockchain.length + 1:
+				# We got an out of order block, ask everyone what the blockchain is to reset our block/???
+				# TODO make sure this is correct Logic. I think it might be wrong because then an evil client could just keep sending blocks with larger lengths and keep making everyone reset their block chain
+				# I understand the idea is that maybe we chose the wrong fork and therefore need to be corrected, but im just not sure. 
 				self.askBlockchain()
 				# Wipe our entries pool and stop mining
 				self.killMine = True
@@ -395,7 +402,7 @@ class Client:
 				if len(self.entries.keys()) == 1:
 					# kick off the timer thread
 					
-					t2 = threading.Thread(self.timerThread)
+					t2 = threading.Thread(target=self.timerThread, daemon=True)
 					t2.start()	
 				
 	def recievePoll(self, jsonin):
@@ -415,9 +422,23 @@ class Client:
 	def sendVote(self, data):
 		# make an entry object
 		newEntry = blockchain.entry.Entry(self.poll_id, data, self.pk)
+		# sign the vote
+		newEntry.sign(self.privateKey)
 		jsonout = json.dumps({"entry": newEntry.serialize(), "flag": "entry"})
 		# send it out 
 		self.sendToPeers(jsonout)
+
+		# Also check that we ourselves could be a miner. If so we want to add it to our own pool of entries and start the timer thread
+		"""
+		if self.mining:
+			self.entries[newEntry.getID()] = newEntry
+			# If this was the first entry seen
+			if len(self.entries.keys()) == 1:
+					# kick off the timer thread
+					t2 = threading.Thread(target=self.timerThread, daemon=True)
+					t2.start()	
+		"""
+
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ class Entry:
     
     def getID(self):
         sha = hashlib.sha256()
-        sha.update((self.poll_id + self.public_key[0] + self.public_key[1]).encode('utf-8'))
+        sha.update((self.poll_id + str(self.public_key[0]) + str(self.public_key[1])).encode('utf-8'))
         return sha.hexdigest()
 
     def sign(self, private_key):
@@ -30,8 +30,9 @@ class Entry:
         parameters:
             private_key -- RSA private key
         """
-        message = (self.poll_id + self.vote).encode()
-        self.signature = str(rsa.sign(message, private_key, 'SHA-1')) 
+        message = f'{self.poll_id} + {self.vote}'.encode()
+        # Create the signature and then turn it to string. 
+        self.signature = rsa.sign(message, private_key, 'SHA-1').hex()
         
 
     def verify(self):
@@ -41,12 +42,14 @@ class Entry:
         returns:
             True if verification is successful, False otherwise
         """
-        # TODO figure out authentication of keys
-        message = f'{self.poll_id} - {self.vote}'.encode()
+       
+        message = f'{self.poll_id} + {self.vote}'.encode()
 
         try:
+            # Remember  that public key and signature are stored as primitives for serialization, so before we verify revert them back to their proper forms for rsa.verify
             pk = self.public_key
-            rsa.verify(message, self.signature, rsa.PublicKey(pk[0], pk[1]))
+           
+            rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
             return True
         except rsa.pkcs1.VerificationError as e:
             print(f'Encountered verification error in Entry/verify() \n{e}')
