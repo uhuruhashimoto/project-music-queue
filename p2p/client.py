@@ -36,7 +36,7 @@ class Client:
 	Initialize our client object, sets our parameters, and
 	opens our ports.
 	"""
-	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToMine, keyFile):
+	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToMine, keyPaths):
 		# Start us off with an initial Blockchain that we can add to . We will also call for all clients to update us with theirs
 		self.blockchain = blockchain.blockchain.Blockchain()
 
@@ -53,14 +53,24 @@ class Client:
 		self.ip = gethostbyname(gethostname())
 		print(f"Found our own ip: {self.ip}")
 
-		# my public and private keys, first parameter is number of bits
-		# might have slightly less if accurate is set to false
-		if keyFile is None:
-			self.publicKey, self.privateKey  = rsa.newkeys(512,accurate = False)
+		if keyPaths:
+			try:
+				with open(keyPaths[0], 'rb') as keyFile:
+					keyData = keyFile.read()
+				self.publicKey = rsa.PublicKey.load_pkcs1(keyData)
+
+				with open(keyPaths[1], 'rb') as keyFile:
+					keyData = keyFile.read()
+				self.privateKey = rsa.PrivateKey.load_pkcs1(keyData)
+				print(f'Loaded keys from file. PK: \n{self.publicKey}')
+			except Exception as e:
+				print(f'Error encountered while attempting to load keys from file')
+				raise e
+		else:
+			# might have slightly less if accurate is set to false
+			self.publicKey, self.privateKey  = rsa.newkeys(nbits=512,accurate = False)
 			self.pk = (self.publicKey.n, self.publicKey.e)
 			print(f"Generated our own keys. PK: {self.publicKey}")
-		else:
-			pass # read keyfile here, TODO
 
 		# dictionary to hold peers, mapping their
 		# 4-tuple of ips, port, public key, and socket
