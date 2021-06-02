@@ -1,9 +1,10 @@
+""""
 from blockchain import Blockchain
 from .poll import PollResults
 
 
 def put_new_poll(song, head, miner_key, name='Anonymous'):
-    """
+    
     Allows a miner to submit a new poll, given they have credit to do so.
 
     parameters:
@@ -14,7 +15,7 @@ def put_new_poll(song, head, miner_key, name='Anonymous'):
     
     returns:
         either nothing or the poll object
-    """
+    
     # Need to first check if miner has credit
     # TODO Determine miner credit scheme
 
@@ -39,7 +40,7 @@ def tally_block_votes(poll_id, block, results):
 
 
 def tally_votes(poll, blockchain):
-    """
+
     Tally the votes in a poll as cast in the provided blockchain.
 
     parameters:
@@ -48,7 +49,7 @@ def tally_votes(poll, blockchain):
 
     assumptions:
         blockchains passed to this function are valid.
-    """
+    
     results = PollResults()
     block = blockchain.head
 
@@ -57,3 +58,5 @@ def tally_votes(poll, blockchain):
         block = block.block_prev
 
     return results
+"""
+#print("hi")

@@ -26,6 +26,8 @@ class Blockchain:
         self.head = block
         self.length = self.length + 1
 
+    
+
     def verify_chain(self, padding):
         """
         Verify that the blockchain is valid. To be valid, the each block must satisfy requirements
@@ -49,6 +51,34 @@ class Blockchain:
             ptr = ptr.block_prev
 
         return True
+
+    # Assumes that the blockchain is valid. Iterates through it and tallies the votes
+    def tally(self, poll):
+        currentBlock = self.head
+        yeas = 0
+        neas = 0
+
+        accountedVoters = set()
+
+        while currentBlock is not None:
+            if currentBlock.entries:
+                for entry in currentBlock.entries:
+                    if entry.poll_id == poll.poll_id:
+                        # for some reason the public key is a list not a tuple
+                        pk = (entry.public_key[0], entry.public_key[1])
+                        if pk not in accountedVoters:
+
+                            if entry.vote == "Y":
+                                yeas +=1
+                            else:
+                                neas +=1
+                            accountedVoters.add(pk)
+            currentBlock = currentBlock.block_prev
+        print(f"The tally has commenced for song: {poll.song}. With {yeas} vote(s) for yes and {neas} votes for no")
+
+
+
+
 
     def serialize(self):
         """
@@ -82,6 +112,7 @@ def deserialize(jsonin):
     out = Blockchain()
 
     js = json.loads(jsonin)
+    
     js.pop()    
     for block in reversed(js):
         out.add_block(deserialize_block(block))

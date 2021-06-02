@@ -82,6 +82,7 @@ def deserialize(jsonin):
     """
     # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
+    
     entry = Entry(js['poll_id'], js['vote'], js['public_key'])
     entry.signature = js['signature'] 
     return entry

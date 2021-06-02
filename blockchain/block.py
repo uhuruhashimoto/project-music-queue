@@ -35,8 +35,8 @@ class Block:
         parameters:
             private_key -- RSA private key
         """
-        message = self.entries[-1].serialize().encode()
-        self.signature = rsa.sign(message, private_key, 'SHA-1') 
+        message = f'{self.entries[-1].serialize()}'.encode()
+        self.signature = rsa.sign(message, private_key, 'SHA-1').hex() 
 
 
     def verify(self, head):
@@ -51,14 +51,12 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        # TODO figure out authentication of keys
-        # if self.public_key <isn't one we trust>
-        #    return False
+        
 
-        message = self.entries[-1].serialize().encode()
+        message = f'{self.entries[-1].serialize()}'.encode()
         try:
             pk = self.public_key
-            rsa.verify(message, self.signature, rsa.PublicKey(pk[0], pk[1]))
+            rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
         except rsa.pkcs1.VerificationError as e:
             print(f'Encountered verification error in Block/verify() \n{e}')
             return False
@@ -117,8 +115,8 @@ def deserialize(jsonin):
     """
     # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
-    
-    entries = [deserialize_entry(entry_str) for entry_str in js['entries']]
+    es = js['entries']
+    entries = [deserialize_entry(entry_str) for entry_str in es]
     # what?
     public_key = js["public_key"]
 

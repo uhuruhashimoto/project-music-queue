@@ -25,6 +25,7 @@ from  voting.poll import Poll
 from socket import *
 import rsa
 import time
+import random
 import threading
 import hashlib
 
@@ -51,14 +52,14 @@ class Client:
 
 		# get our host name
 		self.ip = gethostbyname(gethostname())
-		print(f"Found our own ip: {self.ip}")
+		
 
 		# my public and private keys, first parameter is number of bits
 		# might have slightly less if accurate is set to false
 		if keyFile is None:
 			self.publicKey, self.privateKey  = rsa.newkeys(512,accurate = False)
 			self.pk = (self.publicKey.n, self.publicKey.e)
-			print(f"Generated our own keys. PK: {self.publicKey}")
+			#print(f"Generated our own keys. PK: {self.publicKey}")
 		else:
 			pass # read keyfile here, TODO
 
@@ -92,6 +93,7 @@ class Client:
 		# 
 		self.killMine = False
 		self.miningResult = None
+		self.preparingToMine = False
 
 		# boolean for exiting the program
 		self.keepRunning = True
@@ -194,6 +196,8 @@ class Client:
 				# User is asking to see the current block chain !
 				
 				self.displayBlockChain()
+			elif (data == "TALLY"):
+				self.blockchain.tally(self.poll)
 			else:
 				print("Did not understand input. Please try again.")
 				
@@ -202,7 +206,7 @@ class Client:
 				# read the socket
 			data = socket.recv(BUFF_SIZE*1000)
 			if data:
-				print(f"Received new tracker message.")
+				#print(f"Received new tracker message.")
 				self.handleP2PInput(data, socket)
 				# TODO: handle tracker tally
 			# No data was read from socket buffer, implies socket disconnect
@@ -214,7 +218,7 @@ class Client:
 		else:
 			# read the socket
 			data = socket.recv(BUFF_SIZE*1000)
-			print(f"Received new peer message.")
+			#print(f"Received new peer message.")
 			if data:
 				self.handleP2PInput(data, socket)
 			# No data was read from socket buffer, implies socket disconnect
@@ -233,10 +237,11 @@ class Client:
 		#start time
 		t = time.time()
 
-		# serialize data to json string
-		txt = block.serialize().encode('utf-8')
+		
 
 		while not is_mined and not self.killMine:
+			# serialize data to json string
+			txt = block.serialize().encode('utf-8')
 			# compute hash val -- must always match block.py
 			hash_val = hashlib.sha256(txt).hexdigest()
 
@@ -248,33 +253,39 @@ class Client:
 				raise BaseException(f'Mining timeout')
 			
 			# increment nonce
-			block.nonce = block.nonce + 1
+			block.nonce = random.getrandbits(64)
 			
 		# Send this block to everyone we know and
 		# update our own blockchain with this new block
-		self.blockchain.add_block(block)
+		if (not self.killMine):
+			print("I finished mining a block woohoo, will add it to my block chain !")
+			self.blockchain.add_block(block)
 
-		sendblock = {"flag": "block", "block": block.serialize(), "length": self.blockchain.length}
-		self.sendToPeers(sendblock)
+			sendblock = json.dumps({"flag": "block", "block": block.serialize(), "length": self.blockchain.length})
+			self.sendToPeers(sendblock)
 		
 
 
 	"""
-	This thread is kicked off (when? under what conditions?)
+	This thread is kicked off (when? under wPhat conditions?)
 	It first waits self.timeToMine seconds, then kicks off a mining
 	thread.
 	"""
 	def timerThread(self):
 		print("Starting a timer. Once it completes we will mine!")
+		self.preparingToMine = True
 		time.sleep(self.timeToMine)
 		self.killMine = False
 		
 		# Fill the block object and start the mine thread
-		block = blockchain.block.Block(self.entries, self.publicKey, self.blockchain.head.sha256())
+		block = blockchain.block.Block(list(self.entries.values()), self.pk, self.blockchain.head.sha256())
+		# reset your entry pool assuming that you put all the entries you could in . 
+		self.entries = {}
 		block.sign(self.privateKey)
 		
-		t1 = threading.Thread(target=self.mine, args=(block), daemon=True)
+		t1 = threading.Thread(target=self.mine, args=[block], daemon=True)
 		t1.start()
+		self.preparingToMine = False
 		
 		
 	"""
@@ -297,7 +308,7 @@ class Client:
 			self.updateBlockchain(data["chain"])
 		elif flag == "block":
 			print("Block recieved")
-			self.recieveBlock(data["block"], data["length"])
+			self.receiveBlock(data["block"], data["length"])
 		elif flag == "entry" and self.mining:
 			print("Entry recieved")
 			self.recieveEntry(data["entry"])
@@ -305,7 +316,8 @@ class Client:
 			print("Poll recieved")
 			self.recievePoll(data["poll"])
 		elif flag == "update":
-			socket.send(self.blockchain.serialize())
+			toSend = json.dumps({"flag": "blockchain", "chain": self.blockchain.serialize()}).encode()
+			socket.send(toSend)
 		else:
 			print(f"Invalid flag: {flag}")
 
@@ -355,8 +367,8 @@ class Client:
 
 	# Receives an entire blockchain. Sets it to our blockchain if valid 
 	def updateBlockchain(self, jsonin):
-		inchain = blockchain.deserialize(jsonin)
-		if self.blockchain.length < inchain.length and inchain.verify(self.hash_padding):
+		inchain = blockchain.blockchain.deserialize(jsonin)
+		if self.blockchain.length < inchain.length and inchain.verify_chain(self.hash_padding):
 			self.blockchain = inchain
 
 
@@ -380,14 +392,18 @@ class Client:
 
 	# Recieves a block. Decide whether or not to add to our current blockchain. 
 	def receiveBlock(self, block, length):
-		inblock = block.deserialize(block)
-		if inblock.verify():
+		inblock = blockchain.block.deserialize(block)
+		if inblock.verify(self.blockchain.head):
 			# We need to check its length
-			if (length == (self.blockchain.length + 1)) and \
-					(inblock.hash_prev == self.blockchain.head.sha256()):
+			if (length == (self.blockchain.length + 1)):
 				self.blockchain.add_block(inblock)
 				self.killMine = True
 				# Remove any entries in this new block from our entries pool
+				for entry in inblock.entries:
+					# entries have key of entryId, None means don't throw error if this entry never existed. 
+					self.entries.pop(entry.getID(), None)
+
+
 				print("Successfuly Added a new Block to our blockchain")
 				
 			elif length > self.blockchain.length + 1:
@@ -403,17 +419,20 @@ class Client:
 
 	def recieveEntry(self, jsonin):
 			# Receive the entry
-			recievedEntry = blockchain.entry.deserialize(jsonin)
-			# Update the entries dictionary to point from the unique id to the entry itself
-			if recievedEntry.verify():
-				self.entries[recievedEntry.getID()] = recievedEntry
-				print("Received a valid entry")
-				# first entry we have receieved
-				if len(self.entries.keys()) == 1:
-					# kick off the timer thread
-					
-					t2 = threading.Thread(target=self.timerThread, daemon=True)
-					t2.start()	
+			if (self.poll_id != None):
+				recievedEntry = blockchain.entry.deserialize(jsonin)
+				# Update the entries dictionary to point from the unique id to the entry itself
+				if recievedEntry.verify():
+					self.entries[recievedEntry.getID()] = recievedEntry
+					print("Received a valid entry")
+					# first entry we have receieved
+					if len(self.entries.keys()) == 1:
+						# kick off the timer thread
+						if not self.preparingToMine:
+							t2 = threading.Thread(target=self.timerThread, daemon=True)
+							t2.start()
+			else:
+				print("No Poll has been initiated, entry will be discarded")
 				
 	def recievePoll(self, jsonin):
 		poll = voting.poll.deserialize(jsonin)
@@ -430,24 +449,27 @@ class Client:
 	 - data should be a string of either "Y" or "N"
 	"""
 	def sendVote(self, data):
-		# make an entry object
-		newEntry = blockchain.entry.Entry(self.poll_id, data, self.pk)
-		# sign the vote
-		newEntry.sign(self.privateKey)
-		jsonout = json.dumps({"entry": newEntry.serialize(), "flag": "entry"})
-		# send it out 
-		self.sendToPeers(jsonout)
+		# make sure a poll has been initiated 
+		if (self.poll_id != None):
+			# make an entry object
+			newEntry = blockchain.entry.Entry(self.poll_id, data, self.pk)
+			# sign the vote
+			newEntry.sign(self.privateKey)
+			jsonout = json.dumps({"entry": newEntry.serialize(), "flag": "entry"})
+			# send it out 
+			self.sendToPeers(jsonout)
 
-		# Also check that we ourselves could be a miner. If so we want to add it to our own pool of entries and start the timer thread
-		"""
-		if self.mining:
-			self.entries[newEntry.getID()] = newEntry
-			# If this was the first entry seen
-			if len(self.entries.keys()) == 1:
-					# kick off the timer thread
-					t2 = threading.Thread(target=self.timerThread, daemon=True)
-					t2.start()	
-		"""
+			# Also check that we ourselves could be a miner. If so we want to add it to our own pool of entries and start the timer thread
+			
+			if self.mining:
+				self.entries[newEntry.getID()] = newEntry
+				# If this was the first entry seen
+				if len(self.entries.keys()) == 1:
+						# kick off the timer thread
+						if not self.preparingToMine:
+							t2 = threading.Thread(target=self.timerThread, daemon=True)
+							t2.start()	
+		
 
 
 
