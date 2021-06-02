@@ -14,6 +14,7 @@ This class allows a user to create a new client.
 Connect to the tracker and then all the peers, and then send and receive blocks use the block and blockchain API's
 
 """
+import argparse
 import select, sys, queue
 import json 
 from socket import *
@@ -171,12 +172,13 @@ class Tracker:
 
 
 if __name__ == "__main__":
-	# parse command line arguments
-	listenPort = int(sys.argv[1])
-	hashPadding = int(sys.argv[2]) if len(sys.argv) >= 3 else 50
+	argparser = argparse.ArgumentParser(description='Run a votechain tracker!', add_help=True)
+	argparser.add_argument('-l', '--listen-port', default=None, help='set the port to listen at')
+	argparser.add_argument('-h', '--hash-padding', default=50, help='set the hash padding')
+	args = argparser.parse_args()
 	
 	# initialize Tracker object with these arguments
-	myTracker = Tracker(listenPort, hashPadding)
+	myTracker = Tracker(args.listen_port, args.hash_padding)
 
 	# go into the tracker's main while loop
 	myTracker.runTracker()
