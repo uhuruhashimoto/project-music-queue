@@ -444,7 +444,7 @@ class Client:
 				self.entries = {}
 			else:  # ignore any block that is part of a shorter block
 				pass
-		print("Block not verified on recieve block")
+		
 	
 	"""
 	Recieves an entry and adds it to entry list
