@@ -33,7 +33,7 @@ import threading
 import hashlib
 
 BUFF_SIZE = 1024 # in Kb
-TIMEOUT = 60 # mining timeout; in minutes
+MINING_TIMEOUT = 60 # mining timeout; in minutes
 
 class Client:
 	"""
@@ -264,7 +264,7 @@ class Client:
 			# check the block prefix for necessary number of 0
 			is_mined =  not (bitarray >> (len(bitarray) - self.hash_padding))
 			
-			if (time.time()-t) > TIMEOUT*60:
+			if (time.time()-t) > MINING_TIMEOUT*60:
 				raise BaseException(f'Mining timeout')
 			
 			# increment nonce
