@@ -5,7 +5,7 @@ import rsa
 from .entry import deserialize as deserialize_entry
 from .entry import Entry
 
-NONCE_INIT = 0  # TODO convert this to correct 64-bit datatype once known
+NONCE_INIT = 0
 
 
 class Block:
@@ -24,7 +24,7 @@ class Block:
         self.nonce = NONCE_INIT
         self.signature = None
         self.block_prev = None
-
+       
 
     def sign(self, private_key):
         
@@ -35,8 +35,8 @@ class Block:
         parameters:
             private_key -- RSA private key
         """
-        message = self.entries[-1].serialize().encode()
-        self.signature = rsa.sign(message, private_key, 'SHA-1') 
+        message = f'{self.entries[-1].serialize()}'.encode()
+        self.signature = rsa.sign(message, private_key, 'SHA-1').hex() 
 
 
     def verify(self, head):
@@ -51,22 +51,21 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        # TODO figure out authentication of keys
-        # if self.public_key <isn't one we trust>
-        #    return False
-
-        message = self.entries[-1].serialize().encode()
-        try:
-            rsa.verify(message, self.signature, self.public_key)
-        except rsa.pkcs1.VerificationError as e:
-            print(f'Encountered verification error in Block/verify() \n{e}')
-            return False
-
+    
+        if len(self.entries):
+            message = f'{self.entries[-1].serialize()}'.encode()
+            try:
+                pk = self.public_key
+                rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
+            except Exception as e:
+                print(f'Encountered verification error in Block/verify() \n{e}')
+                return False
+                
         if head.sha256() != self.hash_prev:
             return False
 
         for entry in self.entries:
-            if not self.verify():
+            if not entry.verify():
                 return False
 
         return True
@@ -84,10 +83,10 @@ class Block:
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
 
         self_dict['block_prev'] = None
-        self_dict['public_key'] = str(self_dict['public_key'].n)
         self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)
+
 
     def sha256(self):
         """
@@ -98,7 +97,10 @@ class Block:
         """
         sha = hashlib.sha256()
         sha.update(self.serialize().encode('utf-8'))
-        return sha.digest()
+        return sha.hexdigest()
+
+    def getEntries(self):
+        return 
 
 
 def deserialize(jsonin):
@@ -111,30 +113,14 @@ def deserialize(jsonin):
     returns:
         Block object filled with provided data
     """
-    # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
-    
-    entries = [deserialize_entry(entry_str) for entry_str in js['entries']]
-    public_key = rsa.PublicKey(n=int(js['public_key']), e=65537)
+    es = js['entries']
+    entries = [deserialize_entry(entry_str) for entry_str in es]
+    # what?
+    public_key = js["public_key"]
 
     block = Block(entries, public_key, js['hash_prev'])
     block.nonce = js['nonce']
     block.signature = js['signature']
 
     return block
-
-entries = []
-entries2 = []
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "yes", None))
-entries2.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "no", None))
-entries2.append(Entry("Backslide", "no", None))
-newblock = Block(entries, None, None)
-newblock2 = Block(entries2, None, None)
-
-newblock.serialize()
-
