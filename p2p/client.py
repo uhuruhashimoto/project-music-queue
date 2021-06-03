@@ -50,7 +50,7 @@ class Client:
 		# poll information for the current cycle
 		self.poll_id = None
 		self.poll = None
-
+		
 		self.mining = mining
 
 		# get our host name
@@ -84,7 +84,7 @@ class Client:
 		# insert stdin into peer list
 		self.peers.append((self.ip, None, None, sys.stdin))
 
-		# The port that I advertise for peer-2-peer connections
+		# The port"" that I advertise for peer-2-peer connections
 		self.myPort = listenPort
 		self.myListeningSock = None
 		# set up our listening socket
@@ -332,6 +332,7 @@ class Client:
 				self.receiveEntry(data["entry"])
 		elif flag == "poll":
 			print("Poll recieved")
+			
 			self.receivePoll(data["poll"])
 		elif flag == "update":
 			if self.poll is not None:
@@ -471,6 +472,10 @@ class Client:
 				self.poll = poll
 				self.poll_id = poll.poll_id
 				print(f"A poll has started. We are voting on {poll.song}. Vote 'Y/N'.")
+		else:
+			self.tally(self.poll)
+			self.poll = None
+			self.poll_id = None
 
 	"""
 	Send a vote inputted by the user for the current poll

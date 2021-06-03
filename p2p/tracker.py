@@ -54,7 +54,7 @@ class Tracker:
 		# Create a socket and start listening on it
 		self.trackerSock = socket(AF_INET, SOCK_STREAM)
 		self.trackerSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-		self.trackerSock.bind((self.ip, self.listeningPort))
+		self.tralckerSock.bind((self.ip, self.listeningPort))
 		self.trackerSock.listen()
 		print(f"Listening at {self.ip}:{self.listeningPort}")
 
@@ -83,11 +83,17 @@ class Tracker:
 					data = sys.stdin.readline().strip()
 					if (data == "EXIT"):
 						keepRunning = False
+					elif (data == "START"):
+						print("Please enter a song to vote on: ")
 					else:
 						# Send a poll, for now just assume whatever we read was name of poll
 						# new poll
-						newPoll = Poll(data)
-						jsonOut = json.dumps({"poll": newPoll.serialize(), "flag":"poll"})
+						if (data != "END"):
+							newPoll = Poll(data)
+							jsonOut = json.dumps({"poll": newPoll.serialize(), "flag":"poll"})
+						else:
+							jsonOut = json.dumps({"flag":"poll", "poll": None})
+							print("Ended poll.")
 						for client in self.clients:
 							client[3].send(jsonOut.encode())
 				else:
