@@ -98,7 +98,7 @@ class Block:
         """
 
         self_dict = self.__dict__.copy()
-        eself_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+        self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
         del self_dict['block_prev'] 
         self_dict['signature'] = str(self_dict['signature'])
 
