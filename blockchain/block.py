@@ -51,16 +51,16 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        
-
-        message = f'{self.entries[-1].serialize()}'.encode()
-        try:
-            pk = self.public_key
-            rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-        except rsa.pkcs1.VerificationError as e:
-            print(f'Encountered verification error in Block/verify() \n{e}')
-            return False
-
+    
+        if len(self.entries):
+            message = f'{self.entries[-1].serialize()}'.encode()
+            try:
+                pk = self.public_key
+                rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
+            except rsa.pkcs1.VerificationError as e:
+                print(f'Encountered verification error in Block/verify() \n{e}')
+                return False
+                
         if head.sha256() != self.hash_prev:
             return False
 

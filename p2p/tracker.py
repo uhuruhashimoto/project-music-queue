@@ -54,7 +54,7 @@ class Tracker:
 	def openListenSocket(self):
 		# Create a socket and start listening on it
 		self.trackerSock = socket(AF_INET, SOCK_STREAM)
-		
+		self.trackerSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 		self.trackerSock.bind((self.ip, self.listeningPort))
 		self.trackerSock.listen()
 		print(f"Listening at {self.ip}:{self.listeningPort}")

@@ -42,13 +42,10 @@ class Blockchain:
             True if the entire blockchain is valid, False otherwise
         """
 
-      
-
         ptr = self.head
 
-
-        while ptr is not None:
-            if (not ptr.verify() or ptr.hash_prev != ptr.block_prev.sha256()):
+        while ptr.block_prev is not None:
+            if (not ptr.verify(ptr.block_prev) or ptr.hash_prev != ptr.block_prev.sha256()):
                 return False
             ptr = ptr.block_prev
 
