@@ -212,7 +212,10 @@ class Client:
 				# User is asking to see the current block chain!
 				self.displayBlockChain()
 			elif (data == "TALLY"):
-				self.blockchain.tally(self.poll)
+				if self.poll:
+					self.blockchain.tally(self.poll)
+				else:
+					print("No running poll to tally")
 			else:
 				print("Did not understand input. Please try again.")
 				
@@ -331,7 +334,8 @@ class Client:
 				print("Entry recieved")
 				self.receiveEntry(data["entry"])
 		elif flag == "poll":
-			print("Poll recieved")
+			if data["poll"] is not None:
+				print("Poll recieved")
 			
 			self.receivePoll(data["poll"])
 		elif flag == "update":
@@ -466,6 +470,7 @@ class Client:
 	"""	
 	def receivePoll(self, jsonin):
 		if jsonin:
+			self.blockchain.tally(self.poll)
 			poll = voting.poll.deserialize(jsonin)
 			if poll.poll_id != self.poll_id:
 			# Store the poll for display.
@@ -473,7 +478,7 @@ class Client:
 				self.poll_id = poll.poll_id
 				print(f"A poll has started. We are voting on {poll.song}. Vote 'Y/N'.")
 		else:
-			self.tally(self.poll)
+			self.blockchain.tally(self.poll)
 			self.poll = None
 			self.poll_id = None
 
