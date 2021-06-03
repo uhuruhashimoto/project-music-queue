@@ -212,7 +212,10 @@ class Client:
 				# User is asking to see the current block chain!
 				self.displayBlockChain()
 			elif (data == "TALLY"):
-				self.blockchain.tally(self.poll)
+				if self.poll:
+					self.blockchain.tally(self.poll)
+				else:
+					print("No running poll to tally")
 			else:
 				print("Did not understand input. Please try again.")
 				
@@ -255,14 +258,8 @@ class Client:
 		while not is_mined and not self.killMine:
 			block.hash_prev = self.blockchain.head.sha256()
 
-			# serialize data to json string
-			txt = block.serialize().encode('utf-8')
-			# compute hash val -- must always match block.py
-			hash_val = hashlib.sha256(txt).digest()
-			bitarray = bitstring.BitArray(hash_val)
-
 			# check the block prefix for necessary number of 0
-			is_mined =  not (bitarray >> (len(bitarray) - self.hash_padding))
+			is_mined = block.verify(self.blockchain.head, self.hash_padding)
 			
 			if (time.time()-t) > MINING_TIMEOUT*60:
 				raise BaseException(f'Mining timeout')
@@ -331,7 +328,8 @@ class Client:
 				print("Entry recieved")
 				self.receiveEntry(data["entry"])
 		elif flag == "poll":
-			print("Poll recieved")
+			if data["poll"] is not None:
+				print("Poll recieved")
 			
 			self.receivePoll(data["poll"])
 		elif flag == "update":
@@ -417,7 +415,7 @@ class Client:
 		while ptr is not None:
 			if ptr.entries:
 				for entry in ptr.entries:
-							print(f"{entry.vote} vote for {self.poll.song}")
+							print(f"{entry.vote} vote for poll {entry.poll_id}")
 				print("----------------------------")
 			else:
 				print("Initial Block")
@@ -428,7 +426,7 @@ class Client:
 	"""
 	def receiveBlock(self, block, length):
 		inblock = blockchain.block.deserialize(block)
-		if inblock.verify(self.blockchain.head):
+		if inblock.verify(self.blockchain.head, self.hash_padding):
 			# We need to check its length
 			if (length == (self.blockchain.length + 1)):
 				self.blockchain.add_block(inblock)
@@ -446,6 +444,7 @@ class Client:
 				self.entries = {}
 			else:  # ignore any block that is part of a shorter block
 				pass
+		
 	
 	"""
 	Recieves an entry and adds it to entry list
@@ -466,6 +465,7 @@ class Client:
 	"""	
 	def receivePoll(self, jsonin):
 		if jsonin:
+			self.blockchain.tally(self.poll)
 			poll = voting.poll.deserialize(jsonin)
 			if poll.poll_id != self.poll_id:
 			# Store the poll for display.
@@ -473,7 +473,7 @@ class Client:
 				self.poll_id = poll.poll_id
 				print(f"A poll has started. We are voting on {poll.song}. Vote 'Y/N'.")
 		else:
-			self.tally(self.poll)
+			self.blockchain.tally(self.poll)
 			self.poll = None
 			self.poll_id = None
 
@@ -510,7 +510,29 @@ class Client:
 			except:
 				continue
 
+if __name__ == "__main__":
+	# parse command line args
+	trackerIp = sys.argv[1]
+	trackerPort = int(sys.argv[2])
+	listenPort = int(sys.argv[3])
+	# true if it is not passed, otherwise, T or F
+	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
+	# If mining is true, set the time to wait between mine sessions here
+	waitingTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
+	# only assigned if it is passed
+	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
 
+	# initialize Client object with these arguments
+	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, keyFile)
+
+	# go into our client's main while loop
+	myClient.runClient()
+
+	print(f"Exiting client program...")
+
+# This block of code below was a test for using an argument parser for the program
+# If we ever want to go back to using legit "command line arguments", we can adapt this code
+# for it
 """
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(description='Run a votechain client!', add_help=True)
@@ -532,23 +554,3 @@ if __name__ == "__main__":
 
 	print(f"Exiting client program...")
 """
-
-if __name__ == "__main__":
-	# parse command line args
-	trackerIp = sys.argv[1]
-	trackerPort = int(sys.argv[2])
-	listenPort = int(sys.argv[3])
-	# true if it is not passed, otherwise, T or F
-	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
-	# If mining is true, set the time to wait between mine sessions here
-	waitingTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
-	# only assigned if it is passed
-	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
-
-	# initialize Client object with these arguments
-	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, keyFile)
-
-	# go into our client's main while loop
-	myClient.runClient()
-
-	print(f"Exiting client program...")

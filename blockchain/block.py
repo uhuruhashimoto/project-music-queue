@@ -59,34 +59,34 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        dat = self.serialize().encode('utf-8')
-        hash_val = hashlib.sha256(dat).digest()
-        bitarray = bitstring.BitArray(hash_val)
+        if not block_prev:
+            dat = self.serialize().encode('utf-8')
+            hash_val = hashlib.sha256(dat).digest()
+            bitarray = bitstring.BitArray(hash_val)
 
-        print('\n\n\n\n' + str(len(bitarray) - hash_padding) + '\n\n\n\n\n')
-
-        # check the block prefix for necessary number of 0
-        if (bitarray >> (len(bitarray) - hash_padding)):
-            print(f"\n\n\n\nwhoopsie fucker {bitarray}")
-            return False
-    
-        if len(self.entries):
-            message = f'{self.entries[-1].serialize()}'.encode()
-            try:
-                pk = self.public_key
-                rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-            except Exception as e:
-                print(f'Encountered verification error in Block/verify() \n{e}')
+            # check the block prefix for necessary number of 0
+            if (bitarray >> (len(bitarray) - hash_padding)):
                 return False
         
-        if block_prev.sha256() != self.hash_prev:
-            return False
-
-        for entry in self.entries:
-            if not entry.verify():
+            if len(self.entries):
+                message = f'{self.entries[-1].serialize()}'.encode()
+                try:
+                    pk = self.public_key
+                    rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
+                except Exception as e:
+                    print(f'Encountered verification error in Block/verify() \n{e}')
+                    return False
+            
+            if block_prev.sha256() != self.hash_prev:
                 return False
 
-        return True
+            for entry in self.entries:
+                if not entry.verify():
+                    return False
+            return True
+
+        else:
+            return True
 
 
     def serialize(self):
@@ -98,9 +98,8 @@ class Block:
         """
 
         self_dict = self.__dict__.copy()
-        self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
-
-        self_dict['block_prev'] = None
+        eself_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+        del self_dict['block_prev'] 
         self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)
@@ -117,8 +116,7 @@ class Block:
         sha.update(self.serialize().encode('utf-8'))
         return sha.hexdigest()
 
-    def getEntries(self):
-        return 
+    
 
 
 def deserialize(jsonin):
