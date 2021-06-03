@@ -59,4 +59,3 @@ def tally_votes(poll, blockchain):
 
     return results
 """
-#print("hi")

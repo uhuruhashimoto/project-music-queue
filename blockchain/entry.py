@@ -51,8 +51,8 @@ class Entry:
         try:
             # Remember  that public key and signature are stored as primitives for serialization, so before we verify revert them back to their proper forms for rsa.verify
             pk = self.public_key
-            rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-            return True
+            res = rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
+            return res  # separate lines necessary for unittests
         except Exception as e:
             print(f'Encountered verification error in Entry/verify() \n{e}')
             return False
@@ -79,7 +79,6 @@ def deserialize(jsonin):
     returns:
         Entry object filled with provided data
     """
-    # TODO convert json strings to correct types once correct type is known
     js = json.loads(jsonin)
     
     entry = Entry(js['poll_id'], js['vote'], js['public_key'])
