@@ -51,6 +51,9 @@ class Block:
             - self.hash_prev must match hash previous head of blockchain
             - each entry in self.entries must be valid (by calling Entry.verify())
 
+        Allows for verification of future blocks (further ahead than head+1) by not checking
+        tests related to block_prev.
+
         parameters:
             block_prev -- the previous block in the blockchain
             hash_padding -- the number of zeroes needed at the start of a valid block hash
@@ -58,7 +61,10 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        if not block_prev:
+        if block_prev:
+            if block_prev.sha256() != self.hash_prev:
+                return False
+
             dat = self.serialize().encode('utf-8')
             sha = hashlib.sha256(dat)
             hash_val = sha.digest()
@@ -68,26 +74,21 @@ class Block:
             if (bitarray >> (len(bitarray) - hash_padding)):
                 return False
 
-            if len(self.entries):
-                message = f'{self.entries[-1].serialize()}'.encode()
-                try:
-                    pk = self.public_key
-                    rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-                except Exception as e:
-                    print(f'Encountered verification error in Block/verify() \n{e}')
-                    return False
-
-            if block_prev.sha256() != self.hash_prev:
+        if len(self.entries):
+            message = f'{self.entries[-1].serialize()}'.encode()
+            try:
+                pk = self.public_key
+                rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
+            except Exception as e:
+                print(f'Encountered verification error in Block/verify() \n{e}')
                 return False
 
-            for entry in self.entries:
-                if not entry.verify():
-                    return False
-            return True
+        for entry in self.entries:
+            if not entry.verify():
+                return False
+        return True
 
-        else:
-            return (len(self.entries) == 0)
-
+        
 
     def serialize(self):
         """

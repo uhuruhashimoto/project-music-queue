@@ -15,7 +15,7 @@ MALICIOUS_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) T T 15
 
 # Arguments for tracker program
 # [listen_port] [hash_padding] [timeout]
-TRACKER_ARGS = $(TRACKER_PORT) 17
+TRACKER_ARGS = $(TRACKER_PORT) 16
 
 # Run this rule to install all necessary dependency structures and packages
 setup:

@@ -257,18 +257,22 @@ class Client:
 		is_mined = False
 		#start time
 		t = time.time()
+		self.head_hash = self.blockchain.head.sha256()
 
 		while not is_mined and not self.killMine:
-			block.hash_prev = self.blockchain.head.sha256()
+			block.hash_prev = self.head_hash
+			# increment nonce
+			block.nonce = random.getrandbits(64)
+
+			dat = block.serialize().encode('utf-8')
+			hash = hashlib.sha256(dat).digest()
+			bitarray = bitstring.BitArray(hash)
 
 			# check the block prefix for necessary number of 0
-			is_mined = block.verify(self.blockchain.head, self.hash_padding)
+			is_mined = not (bitarray >> (len(bitarray) - self.hash_padding))
 			
 			if (time.time()-t) > MINING_TIMEOUT*60:
 				raise BaseException(f'Mining timeout')
-			
-			# increment nonce
-			block.nonce = random.getrandbits(64)
 			
 		# Send this block to everyone we know and
 		# update our own blockchain with this new block
@@ -400,6 +404,7 @@ class Client:
 		inchain = blockchain.blockchain.deserialize(jsonin)
 		if self.blockchain.length < inchain.length and inchain.verify_chain(self.hash_padding):
 			self.blockchain = inchain
+			self.head_hash = self.blockchain.head.sha256()
 
 	"""
 	Asks peers for an updated blockchain 
@@ -433,12 +438,13 @@ class Client:
 			# We need to check its length
 			if (length == (self.blockchain.length + 1)):
 				self.blockchain.add_block(inblock)
+				self.head_hash = self.blockchain.head.sha256()
 				self.removeFromEntryPool(inblock.entries)
 				self.killMine = True
 
 				print("Successfuly Added a new Block to our blockchain")
 				
-			elif length > self.blockchain.length + 1:
+			elif length > self.blockchain.length + 1: # not reachable code
 				# If we encounter a discrepancy (out of order block), immediately ask peers for their versions of the blockchain, and take the longest 
 				# after asking, we handle the recieved blockchains in handleP2P and updateBlockchain
 				self.askBlockchain()
@@ -462,7 +468,7 @@ class Client:
 					if self.malicious:
 						recievedEntry.vote = 'Y' if recievedEntry.vote == 'N' else 'N'
 					self.entries[recievedEntry.getID()] = recievedEntry
-					print("Received a valid entry")
+					print("Received a valid entry") if not self.malicious else print("Converted recieved entry to a malicious one")
 			else:
 				print("No Poll has been initiated, entry will be discarded")
 
