@@ -1,6 +1,15 @@
+from bitstring import BitArray
 import unittest
 from unittest.mock import Mock, patch
 from blockchain.block import Block
+
+
+class FakeDigest():
+    def __init__(self, ret):
+        self.ret = ret
+
+    def digest(self):
+        return self.ret
 
 
 def get_mock_entries(verify=True, n=5):
@@ -20,6 +29,7 @@ def get_mock_entries(verify=True, n=5):
     for i in range(n):
         mock_entry = Mock()
         mock_entry.verify.return_value = verify
+        mock_entry.serialize.return_value = 'entry{i}'
         entries.append(mock_entry)
     
     return entries
@@ -60,7 +70,8 @@ class TestBlockMethods(unittest.TestCase):
 
     @patch('blockchain.block.rsa')
     @patch('blockchain.block.bytes')
-    def test_verify_all_valid(self, rsa_m, bytes_m):
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0x0000ffff'))
+    def test_verify_all_valid(self, rsa_m, bytes_m, hash_m):
         """
         Test that verification passes when all entries are valid in a block with
         a valid signature
@@ -70,7 +81,9 @@ class TestBlockMethods(unittest.TestCase):
         block.signature = Mock()
         block.hash_prev = 'prev'
         head.sha256.return_value = 'prev'
-        self.assertTrue(block.verify(head) ,'Failed fully valid block verification test')
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
+        self.assertTrue(block.verify(head, 6) ,'Failed fully valid block verification test')
 
         for entry in block.entries:
             entry.verify.assert_called_once()
@@ -78,7 +91,42 @@ class TestBlockMethods(unittest.TestCase):
 
     @patch('blockchain.block.rsa')
     @patch('blockchain.block.bytes')
-    def test_verify_invalid_prev_valid_entries(self, rsa_m, bytes_m):
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0x0000ffff'))
+    def test_verify_pass_padding(self, rsa_m, bytes_m, hash_m):
+        """
+        Test that verification passes when a block has a hash with valid padding
+        """
+        block = get_mock_block(True)
+        head = Mock()
+        block.hash_prev = 'prev'
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
+
+        head.sha256.return_value = block.hash_prev
+        self.assertTrue(block.verify(head, 6))  # verify should return True as there are at least 6 bits of 0s at the front
+
+
+    @patch('blockchain.block.rsa')
+    @patch('blockchain.block.bytes')
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0xffffffff'))
+    def test_verify_fail_padding(self, rsa_m, bytes_m, hash_m):
+        """
+        Test that verification returns False when a block has a hash without valid padding
+        """
+        block = get_mock_block(True)
+        head = Mock()
+        block.hash_prev = 'prev'
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
+
+        head.sha256.return_value = block.hash_prev
+        self.assertFalse(block.verify(head, 6))  # verify should return False as there are not at least 6 bits of 0s at the front
+
+
+    @patch('blockchain.block.rsa')
+    @patch('blockchain.block.bytes')
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0x0000ffff'))
+    def test_verify_invalid_prev_valid_entries(self, rsa_m, bytes_m, hash_m):
         """
         Test that verification fails when a block with valid entries but an invalid 
         previous block is passed for verification (i.e. a hash mismatch).
@@ -86,14 +134,18 @@ class TestBlockMethods(unittest.TestCase):
         block = get_mock_block(True)
         head = Mock()
         block.hash_prev = 'prev'
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
         
         head.sha256.return_value = 'not_prev'
-        self.assertFalse(block.verify(head))
-        
+        self.assertFalse(block.verify(head, 6))
 
-    @patch('blockchain.block.rsa')
+
+
+    @patch('blockchain.entry.rsa.verify', return_value=True)
     @patch('blockchain.block.bytes')
-    def test_verify_valid_prev_invalid_entries(self, rsa_m, bytes_m):
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0x0000ffff'))
+    def test_verify_valid_prev_invalid_entries(self, rsa_m, bytes_m, hash_m):
         """
         Test that verification fails when a block with invalid entries and a valid 
         previous block is passed for verification.
@@ -101,9 +153,11 @@ class TestBlockMethods(unittest.TestCase):
         block = get_mock_block(False)
         head = Mock()
         block.hash_prev = 'prev'
+        head.sha256.return_value = 'prev'
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
 
-        head.sha256.return_value = block.hash_prev
-        self.assertFalse(block.verify(head))
+        self.assertFalse(block.verify(head, 6))
 
         block.entries[0].verify.assert_called_once()
         for entry in block.entries[1:]:
@@ -112,17 +166,20 @@ class TestBlockMethods(unittest.TestCase):
         
     @patch('blockchain.block.rsa')
     @patch('blockchain.block.bytes')
-    def test_verify_invalid_prev_invalid_entries(self, rsa_m, bytes_m):
+    @patch('blockchain.block.hashlib.sha256', return_value=FakeDigest('0xffffffff'))
+    def test_verify_invalid_prev_invalid_entries(self, rsa_m, bytes_m, hash_m):
         """
-        Test that verification fails when a block with invalid entries but an invalid 
+        Test that verification fails when a block with invalid entries and an invalid 
         previous block is passed for verification (i.e. a hash mismatch).
         """
         block = get_mock_block(False)
         head = Mock()
         block.hash_prev = 'prev'
+        block.serialize = Mock()
+        block.serialize.return_value = 'serial'
 
         head.sha256.return_value = 'not_prev'
-        self.assertFalse(block.verify(head))
+        self.assertFalse(block.verify(head, 6))
 
         for entry in block.entries:
             entry.verify.assert_not_called()

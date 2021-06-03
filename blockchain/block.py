@@ -28,7 +28,6 @@ class Block:
     
 
     def sign(self, private_key):
-        
         """
         Sign the block's content with the provided private key instance (see 
         package rsa)
@@ -61,22 +60,23 @@ class Block:
         """
         if not block_prev:
             dat = self.serialize().encode('utf-8')
-            hash_val = hashlib.sha256(dat).digest()
+            sha = hashlib.sha256(dat)
+            hash_val = sha.digest()
             bitarray = bitstring.BitArray(hash_val)
 
             # check the block prefix for necessary number of 0
             if (bitarray >> (len(bitarray) - hash_padding)):
                 return False
-        
+
             if len(self.entries):
                 message = f'{self.entries[-1].serialize()}'.encode()
                 try:
                     pk = self.public_key
                     rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-                except Exception as e:
+                except IndexError as e:
                     print(f'Encountered verification error in Block/verify() \n{e}')
                     return False
-            
+
             if block_prev.sha256() != self.hash_prev:
                 return False
 
