@@ -438,9 +438,8 @@ class Client:
 				print("Successfuly Added a new Block to our blockchain")
 				
 			elif length > self.blockchain.length + 1:
-				# We got an out of order block, ask everyone what the blockchain is to reset our block/???
-				# TODO make sure this is correct Logic. I think it might be wrong because then an evil client could just keep sending blocks with larger lengths and keep making everyone reset their block chain
-				# I understand the idea is that maybe we chose the wrong fork and therefore need to be corrected, but im just not sure. 
+				# If we encounter a discrepancy (out of order block), immediately ask peers for their versions of the blockchain, and take the longest 
+				# after asking, we handle the recieved blockchains in handleP2P and updateBlockchain
 				self.askBlockchain()
 				# Wipe our entries pool and stop mining
 				self.killMine = True
