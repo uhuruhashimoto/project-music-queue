@@ -415,7 +415,7 @@ class Client:
 		while ptr is not None:
 			if ptr.entries:
 				for entry in ptr.entries:
-							print(f"{entry.vote} vote for {self.poll.song}")
+							print(f"{entry.vote} vote for poll {entry.poll_id}")
 				print("----------------------------")
 			else:
 				print("Initial Block")
