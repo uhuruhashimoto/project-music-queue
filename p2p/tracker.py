@@ -11,7 +11,8 @@ Wendell Wu
 
 
 This class allows a user to create a new client. 
-Connect to the tracker and then all the peers, and then send and receive blocks use the block and blockchain API's
+Connect to the tracker and then all the peers 
+(blockchain sending/recieving is in the peer network, not handled by the tracker)
 
 """
 import argparse
@@ -25,14 +26,12 @@ BUFF_SIZE = 1024 # in Kb
 # Port number that we open and wait for connections from clients
 class Tracker:
 	"""
-	Construct the tracker object. Tracker keeps track of the list of
-	clients for now. TODO: handle voting/blockchain stuff
+	Construct the tracker object. Tracker just keeps track of the list of
+	clients for now
 	"""
 	def __init__(self, listeningPort, hashPadding):
 		self.listeningPort = listeningPort
 		self.hashPadding = hashPadding
-
-		self.blockchain = None
 		
 		# A list of all clients which sent to new clients
 		# 4-tuple of ips, port, public key, and socket

@@ -223,7 +223,6 @@ class Client:
 			if data:
 				#print(f"Received new tracker message.")
 				self.handleP2PInput(data, socket)
-				# TODO: handle tracker tally
 			# No data was read from socket buffer, implies socket disconnect
 			else:
 				print(f"Tracker went down!")
