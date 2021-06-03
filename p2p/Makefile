@@ -7,9 +7,11 @@ CLIENT_LISTEN_PORT = 60010
 TRACKER_ADDR = babylon8.thayer.dartmouth.edu
 
 # Arguments for client program
-# [tracker_address] [tracker_port] [self_port] [mining mode] [timeToMine]
-CLIENT_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) F 15
-MINER_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) T 15
+# [tracker_address] [tracker_port] [self_port] [mining mode] [Malicious] [timeToMine] 
+CLIENT_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) F F 15
+MINER_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) T F 15
+MALICIOUS_ARGS = $(TRACKER_ADDR) $(TRACKER_PORT) $(CLIENT_LISTEN_PORT) T T 15
+
 
 # Arguments for tracker program
 # [listen_port] [hash_padding] [timeout]
@@ -28,6 +30,10 @@ client: client.py
 miner: client.py
 	clear
 	$(PYTHON) $^ $(MINER_ARGS)
+
+malicious: client.py
+	clear
+	$(PYTHON) $^ $(MALICIOUS_ARGS)
 
 # Rule for running tracker
 tracker: tracker.py

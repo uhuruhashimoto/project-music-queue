@@ -40,12 +40,15 @@ class Client:
 	Initialize our client object, sets our parameters, and
 	opens our ports.
 	"""
-	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToWait, keyPaths):
+	def __init__(self, trackerIp, trackerPort, listenPort, mining, timeToWait, malicious, keyPaths):
 		# Start us off with an initial Blockchain that we can add to . We will also call for all clients to update us with theirs
 		self.blockchain = blockchain.blockchain.Blockchain()
 
 		# padding required for valid block
 		self.hash_padding = 0
+
+		#Used for testing malicious attacks on blockchain
+		self.malicious = malicious
 		
 		# poll information for the current cycle
 		self.poll_id = None
@@ -453,8 +456,11 @@ class Client:
 			# Receive the entry
 			if (self.poll_id != None):
 				recievedEntry = blockchain.entry.deserialize(jsonin)
+
 				# Update the entries dictionary to point from the unique id to the entry itself
 				if recievedEntry.verify():
+					if self.malicious:
+						recievedEntry.vote = 'Y' if recievedEntry.vote == 'N' else 'N'
 					self.entries[recievedEntry.getID()] = recievedEntry
 					print("Received a valid entry")
 			else:
@@ -517,13 +523,18 @@ if __name__ == "__main__":
 	listenPort = int(sys.argv[3])
 	# true if it is not passed, otherwise, T or F
 	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
+
+	# If malicious is true, evil miner will flip entries
+	malicious = sys.argv[5] == "T" if (len(sys.argv) >= 6) else False
+
 	# If mining is true, set the time to wait between mine sessions here
-	waitingTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
+	waitingTime = int(sys.argv[6]) if (len(sys.argv) >= 7) else 30
+
 	# only assigned if it is passed
-	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
+	keyFile = sys.argv[7] if (len(sys.argv) >= 8) else None
 
 	# initialize Client object with these arguments
-	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, keyFile)
+	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, malicious, keyFile) 
 
 	# go into our client's main while loop
 	myClient.runClient()

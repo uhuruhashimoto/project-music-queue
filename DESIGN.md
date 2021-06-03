@@ -142,7 +142,7 @@ A user logs onto the application by telling the tracker they have joined and wha
 
 
 We need to files to handle this client.py and tracker.py 
-Client can then send a message to all of the other nodes and also communicate with the tracker about leaving. 
+Client can then send a message to all of the other nodes and also communicate with the tracker about leaving.
 
 *Client Module*
 ```
