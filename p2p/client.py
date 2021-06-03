@@ -510,7 +510,29 @@ class Client:
 			except:
 				continue
 
+if __name__ == "__main__":
+	# parse command line args
+	trackerIp = sys.argv[1]
+	trackerPort = int(sys.argv[2])
+	listenPort = int(sys.argv[3])
+	# true if it is not passed, otherwise, T or F
+	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
+	# If mining is true, set the time to wait between mine sessions here
+	waitingTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
+	# only assigned if it is passed
+	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
 
+	# initialize Client object with these arguments
+	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, keyFile)
+
+	# go into our client's main while loop
+	myClient.runClient()
+
+	print(f"Exiting client program...")
+
+# This block of code below was a test for using an argument parser for the program
+# If we ever want to go back to using legit "command line arguments", we can adapt this code
+# for it
 """
 if __name__ == "__main__":
 	argparser = argparse.ArgumentParser(description='Run a votechain client!', add_help=True)
@@ -532,23 +554,3 @@ if __name__ == "__main__":
 
 	print(f"Exiting client program...")
 """
-
-if __name__ == "__main__":
-	# parse command line args
-	trackerIp = sys.argv[1]
-	trackerPort = int(sys.argv[2])
-	listenPort = int(sys.argv[3])
-	# true if it is not passed, otherwise, T or F
-	mining = sys.argv[4] == "T" if (len(sys.argv) >= 5) else True
-	# If mining is true, set the time to wait between mine sessions here
-	waitingTime = int(sys.argv[5]) if (len(sys.argv) >= 6) else 30
-	# only assigned if it is passed
-	keyFile = sys.argv[6] if (len(sys.argv) >= 7) else None
-
-	# initialize Client object with these arguments
-	myClient = Client(trackerIp, trackerPort, listenPort, mining, waitingTime, keyFile)
-
-	# go into our client's main while loop
-	myClient.runClient()
-
-	print(f"Exiting client program...")

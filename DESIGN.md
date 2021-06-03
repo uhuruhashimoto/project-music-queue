@@ -57,17 +57,20 @@ Assumption:
 (if a node recieves data, it can assume it's safe to send to network)
 
 ## Inputs and outputs
-
-
 From the command line, the client will be run with:
 
-`./python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [mine_time] [key_file]`
+`python3 client.py [tracker_address] [tracker_port] [self_port] [mining mode] [mine_time] [key_file]`
 
 Where: 
 - `tracker_address` is the ip address of the tracker/server
-- `socket_port` is the port # of the tracker/server program
--  `mining mode` indicates whether the client is willing to mine blocks and whether or not the client is able to request specific songs, input as a single char: T or F
-- `mine_time` is the seconds to wait before pulling from our vote pool and beginning to mine a block. By default, 30 seconds.
+- `tracker_port` is the port number used by the tracker
+- `self_port` is the port # of our own listening socket for p2p connections
+- `mining mode` indicates whether the client is willing to mine blocks and
+    whether or not the client is able to request specific songs, input as a
+    single char: T or F
+- `mine_time` is the seconds to wait before pulling from our vote pool and
+    beginning to mine a block. By default, 15 seconds.
+- `key_file` is the file to store persistent keys between sessions, if desired
 
 Per the assignment requirement, we will use the port numbers assigned
 to us for lab 4:
@@ -79,13 +82,11 @@ to us for lab 4:
 
 The tracker will be run with:
 
-`./python3 tracker.py [listen_port] [hash_padding] [cycle_config] [timeout]`
+`python3 tracker.py [listen_port] [hash_padding]`
 
 Where:
 - `listen_port` indicates the port # to listen on for incoming connections
 - `hash_padding` indicates the number of bits to set to 0 for mining. 50 if not passed in.
-- `timeout` is the maximum amount of time, in ms, which the tracker will wait for a response from peers
-
 
 ## Functional decomposition into modules
 
@@ -96,11 +97,6 @@ module in Python.
 
 Hashing module: SHA-256 hashing function. In Python, it's
 in `hashlib`
-
-
-
-
-
 
 **Primary Process Types**:
 
@@ -164,7 +160,6 @@ Terminate polls when told to by command line
 
 
 ## The Protocol (Application-Level)
-
 In the block data, an entry will be serialized and deserialized
 as part of the blockchain. That way, entries/votes will be
 in object form for the program to use as necessary. Message types
@@ -223,9 +218,10 @@ verify_chain(self, padding){
     False if not. 
 }
 
-tally(self){
+tally(self, poll){
 	Iterate through the blockchain. 
-	Keep tallies of each poll and displays their results. 
+	Keep tallies of the poll by reading every entry of the blockchain 
+    Print out the results
 }
 ```
 
@@ -236,19 +232,26 @@ A specific vote sent by a user using their private key.
 ```
 Data
 Public Key
-Song Vote
-Signature 
-Functions
+Poll_id
+Song Vote (Y or N)
+Signature
+```
 
-sign()
+Functions
+```
+getID()
 {
-	 generates public key and signature of entry
+    returns the ID of the vote based on the pollId on and person who voted. 
+
+}
+sign(privateKey)
+{
+	 generates signature of entry with the private key
 }
 verify()
 {
-	
+	verifies that this signature matches the public key associated with the entry. 
 }
-write()
 ```
 
 *Block* 
@@ -261,35 +264,24 @@ A collection of Entries.
 Block ID
 Nonce
 Entries (The Data)
+A signature of this block
+The hash of the previous block
 A link to the previous block
  
  //Functions 
  
-hash() 
+sha256() 
 {
     SHA256 hash function
 }
-verify()
+verify(block_prev, hash_padding)
 {
-    Bitshift self.hash() to isolate desired HASH_PADDING, and check 
-    this is 0
-}
-mine(Data, numOfZero) 
-{
-    generate nonce values until self.verify() == TRUE
+    If not the root block, then we check that every entry is valid
+    We check that the previous hash is actually the hash of the previous block in the chain
+    We check that hash of this block does in fact pass our hash padding requirement (proof of work)
 }
 
-//Serialize the list using pickle,
-//ignoring any pointers and local data
-serialize()
-{
-    iterate through list (recursive)
-}
-
-write()
-{
-    writes data to entries 
-}
+serialize() and deserialize()
 ```
 
 *Client*
@@ -332,9 +324,7 @@ Calls GetBlockChain, gets the chain
 Then calls tally on the chain
 Broadcast's the official tally to all clients (who are free to verify on their own)
 }
-
 ```
-
 
 ## Testing plan
 Unit testing will be done for each new function and class.
