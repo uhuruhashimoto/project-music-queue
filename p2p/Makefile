@@ -49,4 +49,4 @@ test:
 .PHONY: clean
 
 clean:
-	cd ..; rm -rf */__pycache__; rm -f **/*.pyc; rm -rf votechain.egg-info
+	cd ..; rm -rf */__pycache__; rm -f **/*.pyc
