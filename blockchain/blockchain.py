@@ -77,9 +77,6 @@ class Blockchain:
             print(f"The tally has finished for song: {poll.song}. With {yeas} vote(s) for yes and {neas} votes for no")
 
 
-
-
-
     def serialize(self):
         """
         Serialize the object to a JSON representation
