@@ -432,7 +432,7 @@ class Client:
 	"""
 	def receiveBlock(self, block, length):
 		inblock = blockchain.block.deserialize(block)
-		if inblock.verify(self.blockchain.head):
+		if inblock.verify(self.blockchain.head, self.hash_padding):
 			# We need to check its length
 			if (length == (self.blockchain.length + 1)):
 				self.blockchain.add_block(inblock)
