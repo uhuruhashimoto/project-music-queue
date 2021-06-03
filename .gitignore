@@ -15,3 +15,6 @@
 
 # bootstraping
 votechain.egg-info
+
+# testing
+*.pyc

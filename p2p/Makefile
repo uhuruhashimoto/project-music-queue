@@ -20,6 +20,7 @@ TRACKER_ARGS = $(TRACKER_PORT) 16
 # Run this rule to install all necessary dependency structures and packages
 setup:
 	pip3 install -e ..
+	make test
 
 # Rule for running client.
 client: client.py
@@ -39,3 +40,13 @@ malicious: client.py
 tracker: tracker.py
 	clear
 	$(PYTHON) $^ $(TRACKER_ARGS)
+
+# a rule to run the unit tests in the test folder
+test:
+	cd ..; \
+	$(PYTHON) -m unittest -v
+
+.PHONY: clean
+
+clean:
+	cd ..; rm -rf */__pycache__; rm -f **/*.pyc; rm -rf votechain.egg-info
