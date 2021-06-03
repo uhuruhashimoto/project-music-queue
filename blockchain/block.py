@@ -59,7 +59,7 @@ class Block:
         returns:
             True if the block is valid, False otherwise
         """
-        if not self.block_prev:
+        if not block_prev:
             dat = self.serialize().encode('utf-8')
             hash_val = hashlib.sha256(dat).digest()
             bitarray = bitstring.BitArray(hash_val)
@@ -83,8 +83,8 @@ class Block:
             for entry in self.entries:
                 if not entry.verify():
                     return False
-
             return True
+
         else:
             return True
 
@@ -99,8 +99,7 @@ class Block:
 
         self_dict = self.__dict__.copy()
         self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
-
-        self_dict['block_prev'] = None
+        del self_dict['block_prev'] 
         self_dict['signature'] = str(self_dict['signature'])
 
         return json.JSONEncoder().encode(self_dict)

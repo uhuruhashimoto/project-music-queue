@@ -258,14 +258,8 @@ class Client:
 		while not is_mined and not self.killMine:
 			block.hash_prev = self.blockchain.head.sha256()
 
-			# serialize data to json string
-			txt = block.serialize().encode('utf-8')
-			# compute hash val -- must always match block.py
-			hash_val = hashlib.sha256(txt).digest()
-			bitarray = bitstring.BitArray(hash_val)
-
 			# check the block prefix for necessary number of 0
-			is_mined =  not (bitarray >> (len(bitarray) - self.hash_padding))
+			is_mined = block.verify(self.blockchain.head, self.hash_padding)
 			
 			if (time.time()-t) > MINING_TIMEOUT*60:
 				raise BaseException(f'Mining timeout')
@@ -450,6 +444,7 @@ class Client:
 				self.entries = {}
 			else:  # ignore any block that is part of a shorter block
 				pass
+		print("Block not verified on recieve block")
 	
 	"""
 	Recieves an entry and adds it to entry list
