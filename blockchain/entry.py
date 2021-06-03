@@ -51,10 +51,9 @@ class Entry:
         try:
             # Remember  that public key and signature are stored as primitives for serialization, so before we verify revert them back to their proper forms for rsa.verify
             pk = self.public_key
-           
             rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
             return True
-        except rsa.pkcs1.VerificationError as e:
+        except Exception as e:
             print(f'Encountered verification error in Entry/verify() \n{e}')
             return False
         
@@ -67,9 +66,6 @@ class Entry:
             string containing JSON
         """
         self_dict = self.__dict__.copy()
-        # Need to serialize both n and e 
-       
-
         return json.JSONEncoder().encode(self_dict)
 
 

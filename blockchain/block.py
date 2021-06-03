@@ -57,7 +57,7 @@ class Block:
             try:
                 pk = self.public_key
                 rsa.verify(message, bytes.fromhex(self.signature), rsa.PublicKey(pk[0], pk[1]))
-            except rsa.pkcs1.VerificationError as e:
+            except Exception as e:
                 print(f'Encountered verification error in Block/verify() \n{e}')
                 return False
                 
