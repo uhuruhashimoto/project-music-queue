@@ -98,7 +98,7 @@ class Block:
         """
 
         self_dict = self.__dict__.copy()
-        self_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
+        eself_dict['entries'] = [entry.serialize() for entry in self_dict['entries']]
         del self_dict['block_prev'] 
         self_dict['signature'] = str(self_dict['signature'])
 
@@ -116,8 +116,7 @@ class Block:
         sha.update(self.serialize().encode('utf-8'))
         return sha.hexdigest()
 
-    def getEntries(self):
-        return 
+    
 
 
 def deserialize(jsonin):
