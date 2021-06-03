@@ -33,7 +33,7 @@ import threading
 import hashlib
 
 BUFF_SIZE = 1024 # in Kb
-TIMEOUT = 60*60 # arbitrarily large mining timeout
+TIMEOUT = 60 # mining timeout; in minutes
 
 class Client:
 	"""
@@ -56,7 +56,6 @@ class Client:
 		# get our host name
 		self.ip = gethostbyname(gethostname())
 	
-
 		if keyPaths:
 			try:
 				with open(keyPaths[0], 'rb') as keyFile:
@@ -102,7 +101,7 @@ class Client:
 		self.timeToWait = timeToWait
 		# entries that we are gonna build a block on if we are a miner
 		self.entries = {}
-		# 
+		# set defaults
 		self.killMine = False
 		self.miningResult = None
 		self.preparingToMine = False
@@ -210,7 +209,7 @@ class Client:
 			elif (data == "Y" or data == "N"):
 				self.sendVote(data)
 			elif(data =="PRINT"):
-				# User is asking to see the current block chain !
+				# User is asking to see the current block chain!
 				self.displayBlockChain()
 			elif (data == "TALLY"):
 				self.blockchain.tally(self.poll)
@@ -227,7 +226,7 @@ class Client:
 				# TODO: handle tracker tally
 			# No data was read from socket buffer, implies socket disconnect
 			else:
-				print(f"Tracker went down! AHHHH!!!")
+				print(f"Tracker went down!")
 				exit(1)
 	
 		#peer is sending data
@@ -251,8 +250,6 @@ class Client:
 	def mine(self, block):
 		print("Starting to Mine!")
 		is_mined = False
-		pref = '0'*self.hash_padding #string for leading zeros
-
 		#start time
 		t = time.time()
 
@@ -268,7 +265,7 @@ class Client:
 			# check the block prefix for necessary number of 0
 			is_mined =  not (bitarray >> (len(bitarray) - self.hash_padding))
 			
-			if (time.time()-t) > TIMEOUT:
+			if (time.time()-t) > TIMEOUT*60:
 				raise BaseException(f'Mining timeout')
 			
 			# increment nonce
@@ -287,7 +284,7 @@ class Client:
 			print("Stopped mining!")
 		
 	"""
-	This thread is kicked off (when? under wPhat conditions?)
+	This thread is kicked off once, and functions on a set-interval cycle.
 	It first waits self.timeToWait seconds, then kicks off a mining
 	thread.
 	"""
@@ -309,7 +306,7 @@ class Client:
 				print(f"No entries to add. Not mining.")
 		
 	"""
-	Handle p2p input.
+	Handle p2p input
 	Preconditions:
 	- data is always non-None
 	"""
@@ -353,8 +350,6 @@ class Client:
 		else:
 			print(f"Invalid flag: {flag}")
 
-	
-
 	"""
 	Given a list of peers from the tracker,
 	attempt to establish tcp connections to all of them if they
@@ -371,12 +366,11 @@ class Client:
 				print(f"Added peer {client[0]}:{client[1]}")
 		self.askBlockchain()
 
-
-	'''
-		Removes a peer from list of peers. 
-		parameters:
-			socket - socket of the peer which is disconnected
-	'''
+	"""
+	Removes a peer from list of peers. 
+	parameters:
+		socket - socket of the peer which is disconnected
+	"""
 	def removePeer(self, socket):
 		for client in self.peers:
 			if client[3] == socket:
@@ -384,6 +378,9 @@ class Client:
 				print(f"Removed peer: {client[0]}:{client[1]}")
 				break
 
+	"""
+	sends JSON data to peers (except for self and tracker)
+	"""
 	def sendToPeers(self, JSONData):
 		for peer in self.peers:
 			if peer[3] != self.trackerSock and peer[3] != sys.stdin and peer[3] != self.myListeningSock:
@@ -395,23 +392,28 @@ class Client:
 					print(f"Tried sending {JSONData} to {peer[3]}, but it failed with exception {e} so I am removing socket")
 					self.removePeer(peer)
 
-	# Receives an entire blockchain. Sets it to our blockchain if valid 
+	"""
+	Receives an entire blockchain. Sets it to our blockchain if valid
+	"""
 	def updateBlockchain(self, jsonin):
 		inchain = blockchain.blockchain.deserialize(jsonin)
 		if self.blockchain.length < inchain.length and inchain.verify_chain(self.hash_padding):
 			self.blockchain = inchain
 
-
-	# 
+	"""
+	Asks peers for an updated blockchain 
+	"""
 	def askBlockchain(self):
 		print(f"Getting blockchain from peers...")
 		update_msg = json.dumps({"flag": "update"})
 		self.sendToPeers(update_msg)
 
-	# Prints the block chain to the command line
+	"""
+	Prints the block chain to the command line
+	"""
 	def displayBlockChain(self):
 		ptr = self.blockchain.head
-		
+		# Prints blocks with delineators and anonymous transactions
 		while ptr is not None:
 			if ptr.entries:
 				for entry in ptr.entries:
@@ -421,7 +423,9 @@ class Client:
 				print("Initial Block")
 			ptr = ptr.block_prev
 
-	# Recieves a block. Decide whether or not to add to our current blockchain. 
+	"""
+	Recieves a block. Decide whether or not to add to our current blockchain. 
+	"""
 	def receiveBlock(self, block, length):
 		inblock = blockchain.block.deserialize(block)
 		if inblock.verify(self.blockchain.head):
@@ -443,7 +447,10 @@ class Client:
 				self.entries = {}
 			else:  # ignore any block that is part of a shorter block
 				pass
-
+	
+	"""
+	Recieves an entry and adds it to entry list
+	"""
 	def receiveEntry(self, jsonin):
 			# Receive the entry
 			if (self.poll_id != None):
@@ -454,7 +461,10 @@ class Client:
 					print("Received a valid entry")
 			else:
 				print("No Poll has been initiated, entry will be discarded")
-				
+
+	"""
+	Recieves an poll; if not a duplicate, displays and stores it
+	"""	
 	def receivePoll(self, jsonin):
 		if jsonin:
 			poll = voting.poll.deserialize(jsonin)
@@ -496,7 +506,6 @@ class Client:
 					del self.entries[entry.getID()]
 			except:
 				continue
-		
 
 
 """
