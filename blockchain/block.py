@@ -86,7 +86,7 @@ class Block:
             return True
 
         else:
-            return True
+            return (len(self.entries) == 0)
 
 
     def serialize(self):
