@@ -1,3 +1,4 @@
+import bitstring
 import hashlib
 import json
 import rsa
@@ -24,7 +25,7 @@ class Block:
         self.nonce = NONCE_INIT
         self.signature = None
         self.block_prev = None
-       
+    
 
     def sign(self, private_key):
         
@@ -39,18 +40,35 @@ class Block:
         self.signature = rsa.sign(message, private_key, 'SHA-1').hex() 
 
 
-    def verify(self, head):
+    def verify(self, block_prev, hash_padding):
         """
         Verify that a block is valid. To be valid, the block must satisfy:
+            - self.sha256() must start with hash_padding number of zeroes
             - self.public_key must be the public RSA key of an authenticated miner
+                - Considered a reach goal of the project, and not done for now. Would
+                        require certification authority style management
             - self.signature must be a valid signature for self.public_key
                 computed on the last entry in entries
-            - self.hash_prev must match hash of current head of blockchain
+            - self.hash_prev must match hash previous head of blockchain
             - each entry in self.entries must be valid (by calling Entry.verify())
+
+        parameters:
+            block_prev -- the previous block in the blockchain
+            hash_padding -- the number of zeroes needed at the start of a valid block hash
 
         returns:
             True if the block is valid, False otherwise
         """
+        dat = self.serialize().encode('utf-8')
+        hash_val = hashlib.sha256(dat).digest()
+        bitarray = bitstring.BitArray(hash_val)
+
+        print('\n\n\n\n' + str(len(bitarray) - hash_padding) + '\n\n\n\n\n')
+
+        # check the block prefix for necessary number of 0
+        if (bitarray >> (len(bitarray) - hash_padding)):
+            print(f"\n\n\n\nwhoopsie fucker {bitarray}")
+            return False
     
         if len(self.entries):
             message = f'{self.entries[-1].serialize()}'.encode()
@@ -60,8 +78,8 @@ class Block:
             except Exception as e:
                 print(f'Encountered verification error in Block/verify() \n{e}')
                 return False
-                
-        if head.sha256() != self.hash_prev:
+        
+        if block_prev.sha256() != self.hash_prev:
             return False
 
         for entry in self.entries:
