@@ -21,14 +21,14 @@ This tests the flows:
 3. malicious block sending
 	- Video: https://cutt.ly/BnxQPgp
 4. bad inputs to stdin on tracker/clients
-   	- Video: https://cutt.ly/HnxQHDP
-5. client or tracker unexpectedly leaves (ctrl^c/EXIT)
-        - Video: https://cutt.ly/HnxQHDP (Same as 4)
-6. poll handling by tracker (starting, overwriting, and ending polls)
-        - Video: https://cutt.ly/HnxQHDP (Same as 4)
-7. client display ("tally" command) during all stages of voting process
-        - Video: https://cutt.ly/HnxQHDP (Same as 4)
-8. printing blockchains from each client to inspect for differences
-        - Video: https://cutt.ly/HnxQHDP (Same as 4)
+	- Video: https://cutt.ly/HnxQHDP
+6. client or tracker unexpectedly leaves (ctrl^c/EXIT)
+	- Video: https://cutt.ly/HnxQHDP (Same as 4)
+8. poll handling by tracker (starting, overwriting, and ending polls)
+	- Video: https://cutt.ly/HnxQHDP (Same as 4)
+10. client display ("tally" command) during all stages of voting process
+	- Video: https://cutt.ly/HnxQHDP (Same as 4)
+12. printing blockchains from each client to inspect for differences
+	- Video: https://cutt.ly/HnxQHDP (Same as 4)
 
 
