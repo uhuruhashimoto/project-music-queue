@@ -7,6 +7,13 @@
 - Thomas White
 - Wendell Wu
 
+## Presentation
+We have live demo videos in `TESTING.md`, and here are the slides used
+for the final presentation held on 6/4/21:
+https://docs.google.com/presentation/d/1X6jwifSTiaHRHU0DOie0fw7vjMd3_Ui6SpBNKPgLvtI/edit#slide=id.ge0280943e3_2_17
+
+(Also linked here as a hyperlink)[https://docs.google.com/presentation/d/1X6jwifSTiaHRHU0DOie0fw7vjMd3_Ui6SpBNKPgLvtI/edit#slide=id.ge0280943e3_2_17]
+
 ## Usage
 All functionality is handled through the `p2p` files: `tracker.py` and
 `client.py`. They are run, respectively, with `make tracker` and
