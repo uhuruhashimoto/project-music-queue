@@ -14,20 +14,20 @@ seperate series of tests which covers any fundamental class functions.
 ## End-to-End/Blackbox Testing
 This tests the flows:
 
-2. basic demo + new peers receiving relevant data (blockchains, polls, etc.)
-	- Demo video
-3. client voting capability (modifying existing votes as well)
+1. basic demo + new peers receiving relevant data (blockchains, polls, etc.)
+	- Demo video: https://cutt.ly/unxQklZ
+2. client voting capability (modifying existing votes as well)
 	- Video:
-4. malicious block sending
+3. malicious block sending
 	- 
-5. bad inputs to stdin on tracker/clients
+4. bad inputs to stdin on tracker/clients
     - 
-6. client or tracker unexpectedly leaves (ctrl^c/EXIT)
+5. client or tracker unexpectedly leaves (ctrl^c/EXIT)
     - 
-7. poll handling by tracker (starting, overwriting, and ending polls)
+6. poll handling by tracker (starting, overwriting, and ending polls)
 
-8. client display ("tally" command) during all stages of voting process
+7. client display ("tally" command) during all stages of voting process
 
-9. printing blockchains from each client to inspect for differences
+8. printing blockchains from each client to inspect for differences
 
 
